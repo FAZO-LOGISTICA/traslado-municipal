@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title id="docTitle">Traslado Municipal — Reservas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}</style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+<header id="topbar" class="bg-emerald-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow">
+  <div class="flex items-center gap-3">
+    <img id="logoTenant" src="" alt="Logo" class="w-8 h-8 hidden sm:block"/>
+    <div>
+      <div id="title" class="font-bold leading-tight">Traslado Municipal — Reservas</div>
+      <div id="subtitle" class="text-xs opacity-80">Municipalidad</div>
+    </div>
+  </div>
+  <div class="text-xs sm:text-sm opacity-90">MVP (gratis)</div>
+</header>
+<main class="max-w-6xl mx-auto p-4">
+  <section class="bg-white rounded-xl border p-3 mb-4">
+    <div class="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+      <div class="text-sm"><span class="font-semibold">Estado API:</span> <span id="apiState" class="text-amber-700">sin configurar (modo demo)</span></div>
+      <div class="flex gap-2 items-center">
+        <input id="apiUrl" type="text" placeholder="Pega aquí la URL del Web App (Apps Script)" class="w-full sm:w-[380px] px-3 py-2 rounded-lg border" />
+        <button id="btnApiSet" class="px-3 py-2 bg-emerald-700 text-white rounded-lg">Conectar</button>
+      </div>
+    </div>
+  </section>
+  <section class="mb-2"><div id="tipoTabs" class="flex gap-2 overflow-x-auto scrollbar-hide"></div></section>
+  <section class="mb-4"><div id="dateRail" class="flex gap-2 overflow-x-auto scrollbar-hide"></div></section>
+  <section id="vehiculosWrap"></section>
+</main>
+
+<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl w-full max-w-lg p-5">
+    <h3 class="text-lg font-semibold mb-3">Confirmar reserva</h3>
+    <div id="modalInfo" class="text-sm mb-3"></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+      <div><label class="text-xs">Nombre Funcionario</label><input id="inpNombre" class="w-full px-3 py-2 rounded-lg border" placeholder="Nombre y apellido"/></div>
+      <div><label class="text-xs">Departamento</label><input id="inpDepto" class="w-full px-3 py-2 rounded-lg border" placeholder="Ej: Operaciones"/></div>
+    </div>
+    <div class="flex items-center justify-end gap-2">
+      <button id="btnCancel" class="px-4 py-2 rounded-lg border">Cancelar</button>
+      <button id="btnReservar" class="px-4 py-2 rounded-lg bg-emerald-700 text-white">Reservar</button>
+    </div>
+    <div id="modalMsg" class="text-sm mt-3"></div>
+  </div>
+</div>
+
+<script>
+let BRAND={title:"Traslado Municipal — Reservas",tenant:"Municipalidad de Valparaíso",colors:{primary:"#0f766e"},logo_tenant:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Coat_of_arms_of_Valpara%C3%ADso%2C_Chile.svg/96px-Coat_of_arms_of_Valpara%C3%ADso%2C_Chile.svg.png"};
+let API_URL="";
+(async function(){try{const r=await fetch("brand.json");if(r.ok)BRAND={...BRAND,...(await r.json())}}catch(e){}try{const r2=await fetch("api.json");if(r2.ok)API_URL=(await r2.json()).API_URL||""}catch(e){}applyBrand();refresh()})();
+function applyBrand(){const bar=document.getElementById("topbar"),title=document.getElementById("title"),subtitle=document.getElementById("subtitle"),logoTenant=document.getElementById("logoTenant"),apiState=document.getElementById("apiState");title.textContent=BRAND.title;subtitle.textContent=BRAND.tenant||"";if(BRAND.logo_tenant){logoTenant.src=BRAND.logo_tenant;logoTenant.classList.remove("hidden")}if(BRAND.colors&&BRAND.colors.primary){bar.style.backgroundColor=BRAND.colors.primary;document.querySelectorAll(".bg-emerald-700").forEach(el=>el.style.backgroundColor=BRAND.colors.primary)}apiState.textContent=API_URL?"conectada":"sin configurar (modo demo)";apiState.className=API_URL?"text-emerald-700":"text-amber-700"}
+document.getElementById('btnApiSet').onclick=()=>{API_URL=document.getElementById('apiUrl').value.trim();applyBrand();refresh()};
+
+const SLOT_STEP_MIN=30,SLOT_DURATION_MIN=60,JORNADA={inicio:"08:00",fin:"20:00"};
+const VEHICULOS_DEMO=[
+{id:"NAV-1",tipo:"Pickup 4x4",nombre:"Nissan Navara 1",patente:"XXYY11"},
+{id:"NAV-2",tipo:"Pickup 4x4",nombre:"Nissan Navara 2",patente:"XXYY22"},
+{id:"RAN-1",tipo:"Pickup 4x4",nombre:"Ford Ranger 1",patente:"ABCD10"},
+{id:"RAN-2",tipo:"Pickup 4x4",nombre:"Ford Ranger 2",patente:"ABCD20"},
+{id:"RAN-3",tipo:"Pickup 4x4",nombre:"Ford Ranger 3",patente:"ABCD30"},
+{id:"RAN-4",tipo:"Pickup 4x4",nombre:"Ford Ranger 4",patente:"ABCD40"},
+{id:"VAN-1",tipo:"Van 14p",nombre:"Nissan NV350 14p",patente:"VAN350"},
+{id:"FRO-1",tipo:"Doble Cabina Carga",nombre:"Frontier Carga 1",patente:"FRON11"},
+{id:"FRO-2",tipo:"Doble Cabina Carga",nombre:"Frontier Carga 2",patente:"FRON22"}];
+
+function d2(n){return n<10?"0"+n:""+n}function today(){const d=new Date();d.setHours(0,0,0,0);return d}
+function addDays(b,n){const d=new Date(b);d.setDate(d.getDate()+n);return d}function ymd(d){return d.toISOString().slice(0,10)}
+function etiquetaFecha(d){return d.toLocaleDateString("es-CL",{weekday:"short",day:"2-digit",month:"short"})}
+function toMin(h){const [H,M]=h.split(":").map(Number);return H*60+M}function toHHMM(m){return d2(Math.floor(m/60))+":"+d2(m%60)}
+function generarSlots(j,step,dur){const out=[];let i=toMin(j.inicio);const end=toMin(j.fin);while(i+dur<=end){out.push([toHHMM(i),toHHMM(i+dur)]);i+=step}return out}
+const ALL_SLOTS=generarSlots(JORNADA,SLOT_STEP_MIN,SLOT_DURATION_MIN);
+
+let state={tipos:[],selectedTipo:null,fechas:[],selectedDate:ymd(today()),vehiculos:[],reservas:[],bloqueos:[]};
+function buildFechas(){const arr=[];const b=today();for(let i=0;i<7;i++)arr.push(ymd(addDays(b,i)));state.fechas=arr}
+async function fetchData(){if(!API_URL){state.vehiculos=VEHICULOS_DEMO;state.reservas=[];state.bloqueos=[];return}const r=await fetch(API_URL+"?action=availability&date="+state.selectedDate);const data=await r.json();state.vehiculos=data.vehiculos||[];state.reservas=data.reservas||[];state.bloqueos=data.bloqueos||[]}
+function calcTipos(){const tipos=Array.from(new Set(state.vehiculos.map(v=>v.tipo)));state.tipos=tipos;if(!state.selectedTipo)state.selectedTipo=tipos[0]||null}
+function overlap(a1,a2,b1,b2){return a1<b2&&b1<a2}
+function isSlotDisabled(vId,[ini,fin]){const s=toMin(ini),e=toMin(fin);const confR=state.reservas.some(r=>r.vehiculo_id===vId&&overlap(s,e,toMin(r.inicio)-30,toMin(r.fin)+30));if(confR)return{disabled:true,reason:"Ocupado/buffer"};const confB=state.bloqueos.some(b=>b.vehiculo_id===vId&&overlap(s,e,toMin(b.inicio),toMin(b.fin)));if(confB)return{disabled:true,reason:"Mantención"};return{disabled:false}}
+
+function renderTabs(){const wrap=document.getElementById('tipoTabs');wrap.innerHTML="";state.tipos.forEach(t=>{const b=document.createElement('button');b.className="px-4 py-2 rounded-full border text-sm "+(t===state.selectedTipo?"bg-emerald-700 text-white border-emerald-700":"bg-white border-slate-200 text-slate-700");b.textContent=t;b.onclick=()=>{state.selectedTipo=t;renderVehiculos()};wrap.appendChild(b)})}
+function renderFechas(){const wrap=document.getElementById('dateRail');wrap.innerHTML="";state.fechas.forEach(dt=>{const b=document.createElement('button'),active=dt===state.selectedDate;b.className="px-3 py-2 rounded-lg border text-xs text-center min-w-[110px] "+(active?"bg-emerald-100 border-emerald-500 text-emerald-900":"bg-white border-slate-200 text-slate-700");const d=new Date(dt+"T00:00:00");b.innerHTML=`<div class="font-semibold">${etiquetaFecha(d)}</div>`;b.onclick=async()=>{state.selectedDate=dt;await refresh()};wrap.appendChild(b)})}
+
+let reserveCtx=null;function openModal(info){reserveCtx=info;document.getElementById('modalInfo').innerHTML=`<div class="text-slate-700">Vehículo: <b>${info.vehiculo.nombre}</b><br/>Fecha: <b>${state.selectedDate}</b><br/>Horario: <b>${info.slot[0]}–${info.slot[1]}</b></div>`;document.getElementById('modalMsg').textContent="";const m=document.getElementById('modal');m.classList.remove('hidden');m.classList.add('flex')}
+function closeModal(){const m=document.getElementById('modal');m.classList.add('hidden');m.classList.remove('flex');reserveCtx=null}
+document.getElementById('btnCancel').onclick=closeModal;
+
+async function reservar(){const nombre=document.getElementById('inpNombre').value.trim();const depto=document.getElementById('inpDepto').value.trim();const msg=document.getElementById('modalMsg');msg.className="text-sm";msg.textContent="";if(!nombre||!depto){msg.textContent="⚠️ Ingresa nombre y departamento.";return}const payload={action:"reservar",nombre,departamento:depto,vehiculo_id:reserveCtx.vehiculo.id,fecha:state.selectedDate,inicio:reserveCtx.slot[0],fin:reserveCtx.slot[1]};try{if(!API_URL){msg.textContent="💡 Modo demo: sin guardar. Configura la API.";return}const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok){msg.className="text-sm text-rose-700";msg.textContent="❌ "+(data.error||"No se pudo reservar.");return}msg.className="text-sm text-emerald-700";msg.textContent="✅ Reserva registrada.";setTimeout(async()=>{closeModal();await refresh()},700)}catch(e){msg.className="text-sm text-rose-700";msg.textContent="❌ Error de red."}}
+document.getElementById('btnReservar').onclick=reservar;
+
+function renderVehiculos(){const wrap=document.getElementById('vehiculosWrap');wrap.innerHTML="";const lista=state.vehiculos.filter(v=>v.tipo===state.selectedTipo);if(lista.length===0){wrap.innerHTML='<div class="bg-white border rounded-xl p-6 text-center text-slate-500">Sin vehículos en esta categoría.</div>';return}lista.forEach(v=>{const sec=document.createElement('section');sec.className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4";sec.innerHTML=`<div class="flex items-center gap-3 mb-3"><div class="w-10 h-10 rounded-xl bg-slate-100 grid place-content-center text-lg">🚘</div><div><div class="font-semibold text-slate-900">${v.nombre}</div><div class="text-xs text-slate-500">Patente ${v.patente||"-"}</div></div></div><div class="flex flex-wrap gap-2" id="slots-${v.id}"></div>`;wrap.appendChild(sec);const slotsWrap=sec.querySelector(`#slots-${v.id}`);ALL_SLOTS.forEach(([ini,fin])=>{const{disabled,reason}=isSlotDisabled(v.id,[ini,fin]);const btn=document.createElement('button');const dot=disabled?"bg-slate-300":"bg-emerald-500";const styles=disabled?"bg-slate-100 border-slate-200 text-slate-400 line-through cursor-not-allowed":"bg-white border-slate-200 text-slate-800 hover:border-emerald-400";btn.className=`px-3 py-2 rounded-xl border text-sm flex items-center gap-2 ${styles}`;btn.innerHTML=`<span class="w-2.5 h-2.5 rounded-full ${dot}"></span>${ini} - ${fin}`;btn.disabled=disabled;btn.title=disabled?(reason||"No disponible"):"Disponible";if(!disabled)btn.onclick=()=>openModal({vehiculo:v,slot:[ini,fin]});slotsWrap.appendChild(btn)})})}
+async function refresh(){buildFechas();renderFechas();await fetchData();calcTipos();renderTabs();renderVehiculos()}
+</script>
+</body>
+</html>
