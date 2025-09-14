@@ -1,164 +1,126 @@
-/* === CONFIG === */
-const SPREADSHEET_ID = 'PEGAR_AQUI_ID_DE_TU_PLANILLA'; // File > Share link -> toma el ID
-const SHEET_VEHICULOS = 'vehiculos';
-const SHEET_RESERVAS  = 'reservas';
-const SHEET_BLOQUEOS  = 'bloqueos';
+/*****************************************************
+ * Traslado Municipal — Backend (Google Apps Script)
+ * Hoja de cálculo: "RESERVAS" con encabezados:
+ * A: timestamp | B: fecha | C: nombre | D: depto | E: motivo | F: vehiculo | G: horario | H: estado
+ *****************************************************/
 
-// Ajustes de reglas
-const BUFFER_MIN = 30;     // colchón entre reservas del MISMO vehículo
-const SLOT_MIN   = 60;     // duración mínima que esperas (1h)
-const FMT_TZ     = Session.getScriptTimeZone() || 'America/Santiago';
+// === CONFIG ===
+const SHEET_NAME = "RESERVAS";     // nombre de la pestaña
+const HEADERS = ["timestamp","fecha","nombre","depto","motivo","vehiculo","horario","estado"];
 
-/* === HTTP === */
-function doGet(e){
-  try{
-    const action = (e.parameter.action || '').toLowerCase();
-    if (action === 'availability'){
-      const date = e.parameter.date; // YYYY-MM-DD
-      if (!date) return _json({ok:false, error:'date requerido'});
-      return _json({
-        ok:true,
-        vehiculos: _readVehiculos(),
-        reservas:  _readReservas(date),
-        bloqueos:  _readBloqueos(date)
-      });
+// Si usas varios orígenes, agrega aquí tus dominios Netlify/Render permitidos
+const ALLOWED_ORIGINS = [
+  "https://tusitio.netlify.app",
+  "http://localhost:5173",
+  "http://localhost:3000"
+];
+
+// === CORS helper ===
+function withCors_(e, payload, status) {
+  const origin = (e && e.parameter && e.parameter.origin) || "";
+  const headers = {
+    "Access-Control-Allow-Origin": "*", // o usa origin dinámico si quieres estricto
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+  return ContentService
+    .createTextOutput(typeof payload === "string" ? payload : JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeaders(headers);
+}
+
+function doOptions(e) { // preflight
+  return withCors_(e, { ok: true });
+}
+
+// === Entradas ===
+function doGet(e) {
+  try {
+    const op = (e.parameter && e.parameter.op) || "";
+    if (op === "listar_reservas") {
+      const data = listarReservas_();
+      return withCors_(e, { ok: true, reservas: data });
     }
-    return _json({ok:true, hello:'ok'});
-  }catch(err){
-    return _json({ok:false, error:String(err)});
+    // default: ping
+    return withCors_(e, { ok: true, msg: "Traslado Municipal API (GET)" });
+  } catch (err) {
+    return withCors_(e, { ok: false, error: String(err) });
   }
 }
 
-function doPost(e){
-  try{
-    const body = JSON.parse(e.postData.contents || '{}');
-    const action = (body.action || '').toLowerCase();
+function doPost(e) {
+  try {
+    const body = e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
+    const op = body.op || "";
 
-    if (action === 'reservar'){
-      const result = _reservar(body);
-      return _json(result);
+    if (op === "crear_reserva") {
+      const { nombre, depto, motivo, vehiculo, horario } = body;
+      if (!nombre || !depto) {
+        return withCors_(e, { ok: false, error: "Faltan campos obligatorios (nombre, depto)." });
+      }
+      const id = crearReserva_({ nombre, depto, motivo, vehiculo, horario });
+      return withCors_(e, { ok: true, id });
     }
-    return _json({ok:false, error:'acción no soportada'});
-  }catch(err){
-    return _json({ok:false, error:String(err)});
+
+    return withCors_(e, { ok: false, error: "Operación no soportada." });
+  } catch (err) {
+    return withCors_(e, { ok: false, error: String(err) });
   }
 }
 
-/* === CORE === */
-function _reservar(p){
-  // payload esperado
-  // { fecha, inicio, fin, vehiculo_id, nombre, departamento }
-  const req = ['fecha','inicio','fin','vehiculo_id','nombre','departamento'];
-  for (const k of req) if (!p[k]) return {ok:false, error:`Falta ${k}`};
-
-  // normaliza
-  const fecha = p.fecha;          // YYYY-MM-DD
-  const inicio = p.inicio;        // HH:MM
-  const fin    = p.fin;           // HH:MM
-  const veh    = String(p.vehiculo_id).trim();
-  const nombre = String(p.nombre).trim();
-  const depto  = String(p.departamento).trim();
-
-  // Reglas:
-  // 1) Vehículo libre con buffer (BUFFER_MIN)
-  const vehFree = _vehiculoLibre(fecha, veh, inicio, fin, BUFFER_MIN);
-  if (!vehFree.ok) return vehFree;
-
-  // 2) Departamento NO puede tener 2 vehículos en el mismo rango horario
-  const deptFree = _deptoLibre(fecha, depto, inicio, fin);
-  if (!deptFree.ok) return deptFree;
-
-  // 3) Anotar reserva
-  const sh = _sheet(SHEET_RESERVAS);
-  const created = Utilities.formatDate(new Date(), FMT_TZ, 'yyyy-MM-dd HH:mm:ss');
-  sh.appendRow([fecha, inicio, fin, veh, nombre, depto, created]);
-
-  return {ok:true};
+// === Lógica ===
+function getSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_NAME);
+    sh.getRange(1,1,1,HEADERS.length).setValues([HEADERS]);
+    sh.setFrozenRows(1);
+  }
+  // Asegura encabezados
+  const currentHeaders = sh.getRange(1,1,1,HEADERS.length).getValues()[0];
+  if (HEADERS.join("|") !== currentHeaders.join("|")) {
+    sh.getRange(1,1,1,HEADERS.length).setValues([HEADERS]);
+  }
+  return sh;
 }
 
-/* === Reglas === */
-function _vehiculoLibre(fecha, vehId, inicio, fin, bufferMin){
-  const s = _toMin(inicio), e = _toMin(fin);
+function listarReservas_() {
+  const sh = getSheet_();
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return [];
+  const range = sh.getRange(2, 1, lastRow - 1, HEADERS.length);
+  const values = range.getValues();
 
-  // bloqueos/mantención
-  const bloqs = _readBloqueos(fecha).filter(b => b.vehiculo_id == vehId);
-  for (const b of bloqs){
-    if (_overlap(s,e, _toMin(b.inicio), _toMin(b.fin))){
-      return {ok:false, error:'Vehículo en mantención'};
-    }
-  }
-  // reservas del mismo vehículo (aplica buffer)
-  const res = _readReservas(fecha).filter(r => r.vehiculo_id == vehId);
-  for (const r of res){
-    if (_overlap(s,e, _toMin(r.inicio)-bufferMin, _toMin(r.fin)+bufferMin)){
-      return {
-        ok:false,
-        error:'Vehículo ocupado',
-        conflict: {
-          nombre: r.nombre, departamento: r.departamento,
-          vehiculo: vehId, inicio: r.inicio, fin: r.fin
-        }
-      };
-    }
-  }
-  return {ok:true};
-}
-
-function _deptoLibre(fecha, depto, inicio, fin){
-  const s = _toMin(inicio), e = _toMin(fin);
-  const res = _readReservas(fecha).filter(r => (r.departamento||'').toLowerCase() === depto.toLowerCase());
-  for (const r of res){
-    // NO se aplica buffer a nivel depto: se bloquea SOLO si se traslapan horario exacto
-    if (_overlap(s,e, _toMin(r.inicio), _toMin(r.fin))){
-      return {
-        ok:false,
-        error:'Tu departamento ya tiene una reserva en ese horario',
-        conflict: {
-          nombre: r.nombre, departamento: r.departamento,
-          vehiculo: r.vehiculo_id, inicio: r.inicio, fin: r.fin
-        }
-      };
-    }
-  }
-  return {ok:true};
-}
-
-/* === Lecturas === */
-function _readVehiculos(){
-  const sh = _sheet(SHEET_VEHICULOS);
-  const vals = sh.getDataRange().getValues();
-  const [hdr, ...rows] = vals;
-  // id | nombre | tipo | patente | estado | foto_url
-  return rows.filter(r => r[0]).map(r => ({
-    id:String(r[0]), nombre:r[1], tipo:r[2], patente:r[3], estado:r[4], foto_url:r[5]
+  // Mapea columnas a objeto
+  return values.map(row => ({
+    timestamp: row[0],
+    fecha:     row[1],
+    nombre:    row[2],
+    depto:     row[3],
+    motivo:    row[4],
+    vehiculo:  row[5],
+    horario:   row[6],
+    estado:    row[7] || "Pendiente"
   }));
 }
 
-function _readReservas(fecha){
-  const sh = _sheet(SHEET_RESERVAS);
-  const vals = sh.getDataRange().getValues();
-  const [hdr, ...rows] = vals;
-  // fecha | inicio | fin | vehiculo_id | nombre | departamento | created_at
-  return rows.filter(r => r[0] && r[0] === fecha).map(r => ({
-    fecha:r[0], inicio:r[1], fin:r[2], vehiculo_id:String(r[3]), nombre:r[4], departamento:r[5]
-  }));
-}
+function crearReserva_({ nombre, depto, motivo, vehiculo, horario }) {
+  const sh = getSheet_();
+  const now = new Date();
+  const fecha = Utilities.formatDate(now, Session.getScriptTimeZone() || "America/Santiago", "yyyy-MM-dd HH:mm");
 
-function _readBloqueos(fecha){
-  const sh = _sheet(SHEET_BLOQUEOS);
-  const vals = sh.getDataRange().getValues();
-  const [hdr, ...rows] = vals;
-  // fecha | inicio | fin | vehiculo_id | motivo
-  return rows.filter(r => r[0] && r[0] === fecha).map(r => ({
-    fecha:r[0], inicio:r[1], fin:r[2], vehiculo_id:String(r[3]), motivo:r[4]
-  }));
-}
-
-/* === Utils === */
-function _sheet(name){ return SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name); }
-function _toMin(hhmm){ const [H,M]=(hhmm||'0:0').split(':').map(Number); return H*60+M; }
-function _overlap(a1,a2,b1,b2){ return Math.max(a1,b1) < Math.min(a2,b2); }
-function _json(obj){
-  return ContentService.createTextOutput(JSON.stringify(obj))
-        .setMimeType(ContentService.MimeType.JSON);
+  // Inserta al final
+  const row = [
+    now,               // timestamp (Date)
+    fecha,             // fecha legible
+    nombre,
+    depto,
+    motivo || "",
+    vehiculo || "",    // puede venir vacío, luego se asigna
+    horario || "",     // puede venir vacío, luego se asigna
+    "Pendiente"
+  ];
+  sh.appendRow(row);
+  return sh.getLastRow(); // ID básico: número de fila
 }
