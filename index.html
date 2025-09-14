@@ -3,380 +3,529 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title id="docTitle">Traslado Municipal — Reservas</title>
+  <title>Traslado Municipal — Reservas</title>
+
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .scrollbar-hide::-webkit-scrollbar{display:none}
     .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+    .chip{ @apply text-sm px-3 py-1 rounded-full border }
+    .btn{ @apply px-4 py-2 rounded-xl shadow-sm transition active:scale-[.98]; }
+    .btn-primario{ @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+    .btn-sec{ @apply bg-slate-200 text-slate-700 hover:bg-slate-300; }
+    .card{ @apply bg-white/90 backdrop-blur rounded-2xl shadow p-5; }
+    .pill{ @apply inline-flex items-center px-2 py-1 rounded text-xs font-medium; }
   </style>
+
+  <!-- Chart.js para pestaña Datos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
+  <!-- Encabezado -->
+  <header class="bg-emerald-900 text-white px-4 py-3 sticky top-0 z-50 shadow">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <img id="logoTenant" src="./brand-logo.png" alt="Logo" class="w-9 h-9 rounded-full hidden sm:block"/>
+        <div>
+          <h1 class="text-lg sm:text-2xl font-bold tracking-wide">TRASLADO MUNICIPAL</h1>
+          <p id="tenantSubtitle" class="text-emerald-100 text-xs sm:text-sm">Reservas y gestión de vehículos</p>
+        </div>
+      </div>
 
-  <!-- Topbar -->
-  <header id="topbar" class="bg-emerald-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow">
-    <div class="flex items-center gap-3">
-      <img id="logoTenant" src="" alt="Logo" class="w-8 h-8 hidden sm:block"/>
-      <div>
-        <div id="title" class="font-bold leading-tight">Traslado Municipal — Reservas</div>
-        <div id="subtitle" class="text-xs opacity-80">Municipalidad</div>
+      <!-- Navegación -->
+      <nav class="hidden md:flex items-center gap-1">
+        <button data-tab="registro" class="tablink btn btn-sec">Registro</button>
+        <button data-tab="vehiculos" class="tablink btn btn-sec">Vehículos & Horarios</button>
+        <button data-tab="reservas"  class="tablink btn btn-sec">Reservas</button>
+        <button data-tab="datos"     class="tablink btn btn-sec">Datos</button>
+      </nav>
+
+      <div class="md:hidden">
+        <select id="tabMobile" class="bg-emerald-800 text-white rounded px-3 py-2">
+          <option value="registro">Registro</option>
+          <option value="vehiculos">Vehículos & Horarios</option>
+          <option value="reservas">Reservas</option>
+          <option value="datos">Datos</option>
+        </select>
       </div>
     </div>
-    <div class="text-xs sm:text-sm opacity-90">MVP (gratis)</div>
   </header>
 
-  <main class="max-w-6xl mx-auto p-4">
-    <!-- Estado API -->
-    <section class="bg-white rounded-xl border p-3 mb-4">
-      <div class="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-        <div class="text-sm">
-          <span class="font-semibold">Estado API:</span>
-          <span id="apiState" class="text-amber-700">sin configurar (modo demo)</span>
+  <!-- Fondo estilo marca de agua -->
+  <div class="fixed inset-0 -z-10 opacity-20"
+       style="background-image:url('./fondo-valparaiso.jpg');background-size:cover;background-position:center;"></div>
+
+  <main class="max-w-7xl mx-auto p-4 space-y-6">
+
+    <!-- ===================== REGISTRO ===================== -->
+    <section id="view-registro" class="space-y-6">
+      <div class="card">
+        <h2 class="text-2xl font-bold mb-4">Nueva Reserva</h2>
+
+        <form id="formRegistro" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Nombre / Departamento (mínimos que pediste) -->
+          <div>
+            <label class="block text-sm mb-1">Nombre del Funcionario</label>
+            <select id="r-nombre" class="w-full border rounded-lg px-3 py-2">
+              <option value="">Seleccione funcionario</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Departamento</label>
+            <select id="r-depto" class="w-full border rounded-lg px-3 py-2">
+              <option value="">Seleccione departamento</option>
+            </select>
+          </div>
+
+          <!-- (Opcional) Motivo — lo dejamos visible pero si no lo usas, puedes quitarlo -->
+          <div class="md:col-span-2">
+            <label class="block text-sm mb-1">Motivo del Traslado</label>
+            <input id="r-motivo" type="text" placeholder="Ej: Inspección terreno en Placilla"
+                   class="w-full border rounded-lg px-3 py-2"/>
+          </div>
+
+          <div class="md:col-span-2 flex items-center gap-3">
+            <button type="submit" class="btn btn-primario">Guardar Reserva</button>
+            <button type="button" id="btnLimpiar" class="btn btn-sec">Cancelar</button>
+            <span id="msgRegistro" class="text-sm"></span>
+          </div>
+        </form>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card">
+          <div class="text-sm text-slate-500">Vehículos disponibles</div>
+          <div id="kpiDisponibles" class="text-3xl font-bold">—</div>
         </div>
-        <div class="flex gap-2 items-center">
-          <input id="apiUrl" type="text" placeholder="Pega aquí la URL del Web App (Apps Script)" class="w-full sm:w-[380px] px-3 py-2 rounded-lg border" />
-          <button id="btnApiSet" class="px-3 py-2 bg-emerald-700 text-white rounded-lg">Conectar</button>
+        <div class="card">
+          <div class="text-sm text-slate-500">Traslados en curso</div>
+          <div id="kpiEnCurso" class="text-3xl font-bold">—</div>
         </div>
       </div>
     </section>
 
-    <!-- Tabs por tipo -->
-    <section class="mb-2">
-      <div id="tipoTabs" class="flex gap-2 overflow-x-auto scrollbar-hide"></div>
+    <!-- ===================== VEHÍCULOS & HORARIOS ===================== -->
+    <section id="view-vehiculos" class="hidden space-y-5">
+      <div class="card">
+        <h2 class="text-2xl font-bold mb-4">Selecciona Vehículo y Horario</h2>
+
+        <div id="listaVehiculos" class="space-y-4"></div>
+        <!-- Cada vehículo se renderiza como una tarjeta vertical:
+             [FOTO a la izquierda]  [Bloques horarios a la derecha]
+             Los bloques ocupados = gris; disponibles = claros con borde -->
+      </div>
     </section>
 
-    <!-- Rail de fechas -->
-    <section class="mb-4">
-      <div id="dateRail" class="flex gap-2 overflow-x-auto scrollbar-hide"></div>
+    <!-- ===================== RESERVAS ===================== -->
+    <section id="view-reservas" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold">Reservas</h2>
+        <div class="flex items-center gap-2">
+          <button id="btnRefrescarReservas" class="btn btn-sec">Refrescar</button>
+        </div>
+      </div>
+
+      <div class="card overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="text-left text-slate-600">
+            <tr>
+              <th class="py-2 pr-4">Fecha</th>
+              <th class="py-2 pr-4">Funcionario</th>
+              <th class="py-2 pr-4">Departamento</th>
+              <th class="py-2 pr-4">Vehículo</th>
+              <th class="py-2 pr-4">Horario</th>
+              <th class="py-2 pr-4">Estado</th>
+              <th class="py-2">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyReservas" class="align-top"></tbody>
+        </table>
+      </div>
     </section>
 
-    <!-- Lista por vehículo (estilo “Fútbol 1 / 2 / 3”) -->
-    <section id="vehiculosList" class="space-y-4 mt-3"></section>
+    <!-- ===================== DATOS / ESTADÍSTICAS ===================== -->
+    <section id="view-datos" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="card">
+          <div class="text-xs text-slate-500">Total solicitudes</div>
+          <div id="kpiTotal" class="text-2xl font-bold">—</div>
+        </div>
+        <div class="card">
+          <div class="text-xs text-slate-500">Tasa aprobación</div>
+          <div id="kpiAprob" class="text-2xl font-bold">—</div>
+        </div>
+        <div class="card">
+          <div class="text-xs text-slate-500">Vehículos activos</div>
+          <div id="kpiVehAct" class="text-2xl font-bold">—</div>
+        </div>
+        <div class="card">
+          <div class="text-xs text-slate-500">% Ocupación</div>
+          <div id="kpiOcup" class="text-2xl font-bold">—</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card"><canvas id="chartDeptos" height="220"></canvas></div>
+        <div class="card"><canvas id="chartTiempo"  height="220"></canvas></div>
+        <div class="card"><canvas id="chartTipos"   height="220"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3 class="text-lg font-semibold mb-2">Principales departamentos</h3>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="text-left text-slate-600">
+              <tr>
+                <th class="py-2 pr-4">Departamento</th>
+                <th class="py-2 pr-4">Solicitudes</th>
+                <th class="py-2">% del total</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyDeptos"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <!-- Modal de reserva -->
-  <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-lg p-5">
-      <h3 class="text-lg font-semibold mb-3">Confirmar reserva</h3>
-      <div id="modalInfo" class="text-sm mb-3"></div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-        <div>
-          <label class="text-xs">Nombre Funcionario</label>
-          <input id="inpNombre" class="w-full px-3 py-2 rounded-lg border" placeholder="Nombre y apellido"/>
-        </div>
-        <div>
-          <label class="text-xs">Departamento</label>
-          <input id="inpDepto" class="w-full px-3 py-2 rounded-lg border" placeholder="Ej: Operaciones"/>
-        </div>
-      </div>
-      <div class="flex items-center justify-end gap-2">
-        <button id="btnCancel" class="px-4 py-2 rounded-lg border">Cancelar</button>
-        <button id="btnReservar" class="px-4 py-2 rounded-lg bg-emerald-700 text-white">Reservar</button>
-      </div>
-      <div id="modalMsg" class="text-sm mt-3"></div>
-    </div>
-  </div>
-
+  <!-- =============== JS =============== -->
   <script>
-    /* ------------------------------ BRAND / CONFIG ------------------------------ */
-    let BRAND = {
-      title: "Traslado Municipal — Reservas",
-      tenant: "Municipalidad de Valparaíso",
-      colors: { primary: "#0f766e" },
-      logo_tenant: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Coat_of_arms_of_Valpara%C3%ADso%2C_Chile.svg/96px-Coat_of_arms_of_Valpara%C3%ADso%2C_Chile.svg.png"
+    // ------------------ Config & Helpers ------------------
+    const state = {
+      apiUrl: null,     // cargada desde api.json si existe
+      reservas: [],     // se usa en Reservas y Datos
+      vehiculos: [],    // lista de vehículos
+      horariosBase: [   // ejemplo de bloques (puedes ajustar)
+        "08:00 - 09:00","09:00 - 10:00","10:00 - 11:00","11:00 - 12:00",
+        "12:00 - 13:00","14:00 - 15:00","15:00 - 16:00","16:00 - 17:00"
+      ],
+      charts: {}
     };
-    let API_URL = "";
 
-    (async function init(){
-      try { const r = await fetch("brand.json"); if (r.ok) BRAND = { ...BRAND, ...(await r.json()) }; } catch(e){}
-      try { const r2 = await fetch("api.json"); if (r2.ok) API_URL = (await r2.json()).API_URL || ""; } catch(e){}
-      applyBrand();
-      refresh();
-    })();
-
-    function applyBrand(){
-      const bar = document.getElementById("topbar");
-      const title = document.getElementById("title");
-      const subtitle = document.getElementById("subtitle");
-      const logoTenant = document.getElementById("logoTenant");
-      const apiState = document.getElementById("apiState");
-      const docTitle = document.getElementById("docTitle");
-
-      title.textContent = BRAND.title;
-      subtitle.textContent = BRAND.tenant || "";
-      docTitle.textContent = BRAND.title;
-
-      if (BRAND.logo_tenant){ logoTenant.src = BRAND.logo_tenant; logoTenant.classList.remove("hidden"); }
-      if (BRAND.colors && BRAND.colors.primary){
-        bar.style.backgroundColor = BRAND.colors.primary;
-        document.querySelectorAll(".bg-emerald-700").forEach(el => el.style.backgroundColor = BRAND.colors.primary);
+    async function loadApiUrl() {
+      try {
+        const r = await fetch("./api.json", { cache: "no-store" });
+        if (r.ok) {
+          const cfg = await r.json();
+          state.apiUrl = cfg.webAppUrl || null;
+          console.log("API URL:", state.apiUrl);
+        }
+      } catch (e) {
+        console.warn("api.json no encontrado (modo demo).");
       }
-
-      apiState.textContent = API_URL ? "conectada" : "sin configurar (modo demo)";
-      apiState.className  = API_URL ? "text-emerald-700" : "text-amber-700";
     }
 
-    document.getElementById('btnApiSet').onclick = () => {
-      API_URL = document.getElementById('apiUrl').value.trim();
-      applyBrand();
-      refresh();
-    };
+    const $ = (sel) => document.querySelector(sel);
+    const el = (tag, cls="") => { const n = document.createElement(tag); if (cls) n.className = cls; return n; };
 
-    /* ------------------------------ DEMO / TIEMPOS ------------------------------ */
-    const SLOT_STEP_MIN     = 30;
-    const SLOT_DURATION_MIN = 60;
-    const JORNADA = { inicio: "08:00", fin: "20:00" };
+    function setActiveTab(tab){
+      // botones desktop
+      document.querySelectorAll(".tablink").forEach(b=>{
+        const active = b.dataset.tab===tab;
+        b.classList.toggle("bg-emerald-600", active);
+        b.classList.toggle("text-white", active);
+        b.classList.toggle("btn-primario", active);
+      });
+      // vistas
+      ["registro","vehiculos","reservas","datos"].forEach(v=>{
+        $("#view-"+v).classList.toggle("hidden", v!==tab);
+      });
+      $("#tabMobile").value = tab;
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
 
-    const VEHICULOS_DEMO = [
-      {id:"NAV-1",tipo:"Pickup 4x4",nombre:"Nissan Navara 1",patente:"XXYY11"},
-      {id:"NAV-2",tipo:"Pickup 4x4",nombre:"Nissan Navara 2",patente:"XXYY22"},
-      {id:"RAN-1",tipo:"Pickup 4x4",nombre:"Ford Ranger 1",patente:"ABCD10"},
-      {id:"RAN-2",tipo:"Pickup 4x4",nombre:"Ford Ranger 2",patente:"ABCD20"},
-      {id:"RAN-3",tipo:"Pickup 4x4",nombre:"Ford Ranger 3",patente:"ABCD30"},
-      {id:"RAN-4",tipo:"Pickup 4x4",nombre:"Ford Ranger 4",patente:"ABCD40"},
-      {id:"VAN-1",tipo:"Van 14p",nombre:"Nissan NV350 14p",patente:"VAN350"},
-      {id:"FRO-1",tipo:"Doble Cabina Carga",nombre:"Frontier Carga 1",patente:"FRON11"},
-      {id:"FRO-2",tipo:"Doble Cabina Carga",nombre:"Frontier Carga 2",patente:"FRON22"}
+    // ------------------ Demo Data (fallback si no hay backend) ------------------
+    const DEMO_VEHICULOS = [
+      { id:"FORD4X4", tipo:"Ford 4x4", patente:"AB-DF12", capacidad:"5 pax", foto:"./vehiculos/ford4x4.jpg" },
+      { id:"CAMIONETA", tipo:"Camioneta", patente:"CD-EF34", capacidad:"3 pax", foto:"./vehiculos/camioneta.jpg" },
+      { id:"CARGA", tipo:"Vehículo de carga", patente:"GH-IJ56", capacidad:"1.5t", foto:"./vehiculos/carga.jpg" },
+      { id:"VAN", tipo:"Van", patente:"KL-MN78", capacidad:"10 pax", foto:"./vehiculos/van.jpg" },
     ];
 
-    function d2(n){ return n<10 ? "0"+n : ""+n; }
-    function today(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
-    function addDays(b,n){ const d=new Date(b); d.setDate(d.getDate()+n); return d; }
-    function ymd(d){ return d.toISOString().slice(0,10); }
-    function etiquetaFecha(d){ return d.toLocaleDateString("es-CL",{weekday:"short",day:"2-digit",month:"short"}); }
-    function toMin(h){ const [H,M]=h.split(":").map(Number); return H*60+M; }
-    function toHHMM(m){ return d2(Math.floor(m/60))+":"+d2(m%60); }
-    function generarSlots(j,step,dur){
-      const out=[]; let i=toMin(j.inicio); const end=toMin(j.fin);
-      while(i+dur<=end){ out.push([toHHMM(i),toHHMM(i+dur)]); i+=step; }
-      return out;
-    }
-    const ALL_SLOTS = generarSlots(JORNADA, SLOT_STEP_MIN, SLOT_DURATION_MIN);
+    const DEMO_FUNCIONARIOS = ["Ana Pizarro","Carlos Soto","Daniela R.","Gustavo Oliva","Marcela F."];
+    const DEMO_DEPTOS = ["Operaciones","DIDECO","Secpla","Aseo y Ornato","Turismo"];
 
-    /* ------------------------------ STATE ------------------------------ */
-    let state = {
-      tipos: [],
-      selectedTipo: null,
-      fechas: [],
-      selectedDate: ymd(today()),
-      vehiculos: [],
-      reservas: [],
-      bloqueos: []
-    };
-
-    function buildFechas(){
-      const arr=[]; const b=today();
-      for (let i=0;i<7;i++) arr.push( ymd(addDays(b,i)) );
-      state.fechas = arr;
+    function loadCombosRegistro(){
+      const $n = $("#r-nombre");
+      const $d = $("#r-depto");
+      $n.innerHTML = `<option value="">Seleccione funcionario</option>` + DEMO_FUNCIONARIOS.map(x=>`<option>${x}</option>`).join("");
+      $d.innerHTML = `<option value="">Seleccione departamento</option>` + DEMO_DEPTOS.map(x=>`<option>${x}</option>`).join("");
     }
 
-    async function fetchData(){
-      if (!API_URL){
-        state.vehiculos = VEHICULOS_DEMO;
-        state.reservas  = [];
-        state.bloqueos  = [];
+    // ------------------ Vehículos & Horarios (UI) ------------------
+    function renderVehiculos(){
+      const cont = $("#listaVehiculos"); cont.innerHTML = "";
+      (state.vehiculos.length? state.vehiculos : DEMO_VEHICULOS).forEach(v=>{
+        const card = el("div","border rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center");
+        const img = el("img","w-full md:w-48 h-32 object-cover rounded-xl bg-slate-200");
+        img.src = v.foto || "./vehiculos/vehiculo.jpg"; img.alt = v.tipo;
+        const info = el("div","flex-1 w-full");
+        info.innerHTML = `
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div>
+              <div class="text-lg font-semibold">${v.tipo}</div>
+              <div class="text-sm text-slate-500">Patente: ${v.patente} · Cap.: ${v.capacidad||"-"}</div>
+            </div>
+            <span class="pill bg-emerald-100 text-emerald-700 border border-emerald-300">Disponible</span>
+          </div>
+        `;
+
+        // bloques horarios (derecha)
+        const schedule = el("div","grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2");
+        state.horariosBase.forEach((h,idx)=>{
+          const ocupado = (idx===2 || idx===6); // demo: algunos ocupados
+          const b = el("button", "px-3 py-2 rounded-lg border text-sm " + (ocupado
+              ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+              : "hover:bg-emerald-50 border-emerald-200"));
+          b.textContent = h;
+          b.disabled = ocupado;
+          if(!ocupado){
+            b.addEventListener("click", ()=> reservarHorario(v, h));
+          }
+          schedule.appendChild(b);
+        });
+
+        const right = el("div","flex-1 w-full");
+        right.appendChild(schedule);
+
+        card.appendChild(img);
+        card.appendChild(info);
+        card.appendChild(right);
+        cont.appendChild(card);
+      });
+    }
+
+    async function reservarHorario(vehiculo, hora){
+      // Guarda selección en memoria para usarla en Registro o enviar directo
+      $("#msgRegistro").textContent = `Seleccionaste ${vehiculo.tipo} (${vehiculo.patente}) — ${hora}`;
+      setActiveTab("registro");
+    }
+
+    // ------------------ Registro (submit) ------------------
+    $("#formRegistro")?.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const nombre = $("#r-nombre").value.trim();
+      const depto  = $("#r-depto").value.trim();
+      const motivo = $("#r-motivo").value.trim();
+
+      if(!nombre || !depto){
+        $("#msgRegistro").textContent = "⚠️ Nombre y Departamento son obligatorios.";
+        $("#msgRegistro").className = "text-red-600";
         return;
       }
-      const r = await fetch(API_URL+"?action=availability&date="+state.selectedDate);
-      const data = await r.json();
-      state.vehiculos = data.vehiculos || [];
-      state.reservas  = data.reservas  || [];
-      state.bloqueos  = data.bloqueos  || [];
-    }
+      $("#msgRegistro").textContent = "Guardando…";
+      $("#msgRegistro").className = "text-slate-600";
 
-    function calcTipos(){
-      const tipos = Array.from(new Set(state.vehiculos.map(v=>v.tipo)));
-      state.tipos = tipos;
-      if (!state.selectedTipo) state.selectedTipo = tipos[0] || null;
-    }
-
-    /* ------------------------------ DISPONIBILIDAD ------------------------------ */
-    function overlap(a1,a2,b1,b2){ return a1<b2 && b1<a2; }
-
-    // Cruza reservas (con buffer 30’) y bloqueos/mantención
-    function isSlotDisabled(vId, [ini,fin]){
-      const s = toMin(ini), e = toMin(fin);
-
-      // reservas del vehículo (buffer ±30)
-      const confR = state.reservas.some(r =>
-        r.vehiculo_id===vId && overlap(s,e, toMin(r.inicio)-30, toMin(r.fin)+30)
-      );
-      if (confR) return { disabled:true, reason:"Ocupado/buffer" };
-
-      // bloqueos/mantención
-      const confB = state.bloqueos.some(b =>
-        b.vehiculo_id===vId && overlap(s,e, toMin(b.inicio), toMin(b.fin))
-      );
-      if (confB) return { disabled:true, reason:"Mantención" };
-
-      return { disabled:false };
-    }
-
-    /* ------------------------------ IMÁGENES ------------------------------ */
-    // Imagen por tipo (se usa si la planilla no trae foto_url)
-    const TIPO_IMG = {
-      "pickup 4x4": "/vehiculos/ford_ranger_4x4.webp",
-      "pickup 4x2": "/vehiculos/nissan_navara_4x2.webp",
-      "van 14p": "/vehiculos/nissan_nv350_14p.webp",
-      "doble cabina": "/vehiculos/kia_frontier_carga.webp",
-      "carga": "/vehiculos/kia_frontier_carga.webp"
-    };
-    function imgFor(v){
-      if (v.foto_url) return v.foto_url;
-      const t=(v.tipo||"").toLowerCase();
-      for (const k of Object.keys(TIPO_IMG)) if (t.includes(k)) return TIPO_IMG[k];
-      return TIPO_IMG["pickup 4x4"];
-    }
-
-    /* ------------------------------ UI: TABS / FECHAS ------------------------------ */
-    function renderTabs(){
-      const wrap = document.getElementById('tipoTabs');
-      wrap.innerHTML = "";
-      state.tipos.forEach(t => {
-        const b = document.createElement('button');
-        b.className = "px-4 py-2 rounded-full border text-sm " +
-          (t===state.selectedTipo ? "bg-emerald-700 text-white border-emerald-700" : "bg-white border-slate-200 text-slate-700");
-        b.textContent = t;
-        b.onclick = () => { state.selectedTipo = t; renderVehiculosList(); };
-        wrap.appendChild(b);
-      });
-    }
-
-    function renderFechas(){
-      const wrap = document.getElementById('dateRail');
-      wrap.innerHTML = "";
-      state.fechas.forEach(dt => {
-        const active = dt===state.selectedDate;
-        const b = document.createElement('button');
-        b.className = "px-3 py-2 rounded-lg border text-xs text-center min-w-[110px] " +
-          (active ? "bg-emerald-100 border-emerald-500 text-emerald-900" : "bg-white border-slate-200 text-slate-700");
-        const d = new Date(dt+"T00:00:00");
-        b.innerHTML = `<div class="font-semibold">${etiquetaFecha(d)}</div>`;
-        b.onclick = async () => { state.selectedDate=dt; await refresh(); };
-        wrap.appendChild(b);
-      });
-    }
-
-    /* ------------------------------ MODAL ------------------------------ */
-    let reserveCtx = null;
-
-    function openModal(info){
-      reserveCtx = info;
-      document.getElementById('modalInfo').innerHTML =
-        `<div class="text-slate-700">
-          Vehículo: <b>${info.vehiculo.nombre}</b><br/>
-          Fecha: <b>${state.selectedDate}</b><br/>
-          Horario: <b>${info.slot[0]}–${info.slot[1]}</b>
-        </div>`;
-      document.getElementById('modalMsg').textContent = "";
-      const m = document.getElementById('modal');
-      m.classList.remove('hidden'); m.classList.add('flex');
-    }
-
-    function closeModal(){
-      const m = document.getElementById('modal');
-      m.classList.add('hidden'); m.classList.remove('flex');
-      reserveCtx = null;
-    }
-    document.getElementById('btnCancel').onclick = closeModal;
-
-    async function reservar(){
-      const nombre = document.getElementById('inpNombre').value.trim();
-      const depto  = document.getElementById('inpDepto').value.trim();
-      const msg    = document.getElementById('modalMsg');
-
-      msg.className = "text-sm"; msg.textContent = "";
-      if (!nombre || !depto){ msg.textContent = "⚠️ Ingresa nombre y departamento."; return; }
-
-      const payload = {
-        action:"reservar",
-        nombre, departamento:depto,
-        vehiculo_id:reserveCtx.vehiculo.id,
-        fecha:state.selectedDate, inicio:reserveCtx.slot[0], fin:reserveCtx.slot[1]
-      };
+      // payload básico (ajústalo a tu Apps Script)
+      const data = { op:"crear_reserva", nombre, depto, motivo, timestamp: new Date().toISOString() };
 
       try{
-        if (!API_URL){ msg.textContent="💡 Modo demo: sin guardar. Configura la API."; return; }
-        const r = await fetch(API_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
-        const data = await r.json();
-        if (!data.ok){
-          msg.className="text-sm text-rose-700";
-          let txt = "❌ " + (data.error || "No se pudo reservar.");
-          if (data.conflict){
-            const c=data.conflict;
-            txt += `\n➡️ Reservado por ${c.nombre} (${c.departamento}) — ${c.vehiculo} ${c.inicio}-${c.fin}.`;
+        if(state.apiUrl){
+          const r = await fetch(state.apiUrl, {
+            method: "POST",
+            headers: { "Content-Type":"application/json" },
+            body: JSON.stringify(data)
+          });
+          const j = await r.json().catch(()=>({ok:false}));
+          if(r.ok && (j.ok || j.result==="ok")){
+            $("#msgRegistro").textContent = "✅ Reserva registrada.";
+            $("#msgRegistro").className = "text-emerald-700";
+            $("#formRegistro").reset();
+            await refreshKPIs();
+            await cargarReservas();
+            await cargarDatos();
+            return;
+          } else {
+            throw new Error(j.message || "Respuesta no válida del backend.");
           }
-          msg.textContent = txt;
-          return;
+        } else {
+          // DEMO local
+          state.reservas.push({
+            fecha: new Date().toLocaleString(),
+            nombre, depto, vehiculo:"(por asignar)", horario:"(por definir)", estado:"Pendiente"
+          });
+          $("#msgRegistro").textContent = "✅ (Demo) Reserva registrada localmente.";
+          $("#msgRegistro").className = "text-emerald-700";
+          $("#formRegistro").reset();
+          await refreshKPIs();
+          renderReservas();
         }
-        msg.className="text-sm text-emerald-700"; msg.textContent="✅ Reserva registrada.";
-        setTimeout(async()=>{ closeModal(); await refresh(); }, 700);
-      }catch(e){
-        msg.className="text-sm text-rose-700"; msg.textContent="❌ Error de red.";
+      } catch(err){
+        console.error(err);
+        $("#msgRegistro").textContent = "❌ Error al guardar. Revisa la API o api.json.";
+        $("#msgRegistro").className = "text-red-600";
       }
-    }
-    document.getElementById('btnReservar').onclick = reservar;
+    });
 
-    /* ------------------------------ VISTA: TARJETAS (FÚTBOL) ------------------------------ */
-    function renderVehiculosList(){
-      const wrap = document.getElementById('vehiculosList');
-      wrap.innerHTML = "";
+    $("#btnLimpiar")?.addEventListener("click", ()=> $("#formRegistro").reset());
 
-      const lista = state.vehiculos.filter(v => !state.selectedTipo || v.tipo===state.selectedTipo);
-      if (lista.length===0){
-        wrap.innerHTML = '<div class="bg-white border rounded-xl p-6 text-center text-slate-500">Sin vehículos en esta categoría.</div>';
-        return;
-      }
-
-      lista.forEach(v => {
-        const sec = document.createElement('section');
-        sec.className = "bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4";
-
-        // Encabezado (imagen + nombre)
-        sec.innerHTML = `
-          <div class="flex items-center gap-3 mb-3">
-            <img src="${imgFor(v)}" alt="${v.nombre}"
-                 class="w-10 h-10 object-cover rounded-lg border"
-                 onerror="this.src='${TIPO_IMG['pickup 4x4']}'"/>
-            <div>
-              <div class="font-semibold text-slate-900">${v.nombre}</div>
-              <div class="text-xs text-slate-500">Patente ${v.patente || "-"}</div>
-            </div>
-          </div>
-          <div class="flex flex-wrap gap-2" id="slots-${v.id}"></div>
+    // ------------------ Reservas (tabla) ------------------
+    function renderReservas(){
+      const tb = $("#tbodyReservas"); tb.innerHTML = "";
+      (state.reservas||[]).forEach((r,i)=>{
+        const tr = el("tr","border-t");
+        tr.innerHTML = `
+          <td class="py-2 pr-4">${r.fecha||"-"}</td>
+          <td class="py-2 pr-4">${r.nombre||"-"}</td>
+          <td class="py-2 pr-4">${r.depto||"-"}</td>
+          <td class="py-2 pr-4">${r.vehiculo||"-"}</td>
+          <td class="py-2 pr-4">${r.horario||"-"}</td>
+          <td class="py-2 pr-4">${r.estado||"Pendiente"}</td>
+          <td class="py-2 flex gap-2">
+            <button class="btn btn-primario text-xs" onclick="aprobarReserva(${i})">Aprobar</button>
+            <button class="btn btn-sec text-xs" onclick="rechazarReserva(${i})">Rechazar</button>
+          </td>
         `;
-        wrap.appendChild(sec);
-
-        // Chips horarios
-        const slotsWrap = sec.querySelector(`#slots-${v.id}`);
-        ALL_SLOTS.forEach(([ini,fin])=>{
-          const { disabled, reason } = isSlotDisabled(v.id, [ini,fin]);
-
-          const btn = document.createElement('button');
-          const dot = disabled ? "bg-slate-300" : "bg-emerald-500";
-          const styles = disabled
-            ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
-            : "bg-white border-slate-200 text-slate-800 hover:border-emerald-400";
-
-          btn.className = `px-3 py-2 rounded-2xl border text-sm flex items-center gap-2 ${styles}`;
-          btn.innerHTML = `<span class="w-2 h-2 rounded-full ${dot}"></span>${ini} - ${fin}`;
-          btn.disabled  = disabled;
-          btn.title     = disabled ? (reason || "No disponible") : "Disponible";
-
-          if (!disabled) btn.onclick = () => openModal({ vehiculo:v, slot:[ini,fin] });
-          slotsWrap.appendChild(btn);
-        });
+        tb.appendChild(tr);
       });
     }
 
-    /* ------------------------------ REFRESH ------------------------------ */
-    async function refresh(){
-      buildFechas();
-      renderFechas();
-      await fetchData();
-      calcTipos();
-      renderTabs();
-      renderVehiculosList();
+    async function cargarReservas(){
+      try{
+        if(state.apiUrl){
+          const r = await fetch(state.apiUrl + "?op=listar_reservas",{ cache:"no-store" });
+          const j = await r.json();
+          state.reservas = j.reservas || [];
+        } else {
+          // demo si no hay backend
+          if(state.reservas.length===0){
+            state.reservas = [
+              { fecha:"2025-09-14 09:00", nombre:"Ana Pizarro", depto:"Operaciones", vehiculo:"Ford 4x4", horario:"10:00 - 11:00", estado:"Aprobada" },
+              { fecha:"2025-09-14 10:10", nombre:"Carlos Soto", depto:"DIDECO",     vehiculo:"Van",      horario:"12:00 - 13:00", estado:"Pendiente" }
+            ];
+          }
+        }
+      } catch(e){
+        console.warn("No se pudo cargar reservas:", e);
+      }
+      renderReservas();
     }
+
+    async function aprobarReserva(i){
+      const it = state.reservas[i]; if(!it) return;
+      it.estado = "Aprobada";
+      renderReservas();
+      await cargarDatos();
+    }
+    async function rechazarReserva(i){
+      const it = state.reservas[i]; if(!it) return;
+      it.estado = "Rechazada";
+      renderReservas();
+      await cargarDatos();
+    }
+    window.aprobarReserva = aprobarReserva;
+    window.rechazarReserva = rechazarReserva;
+
+    // ------------------ KPIs ------------------
+    async function refreshKPIs(){
+      // En un backend real, traerías estos conteos desde la API
+      const disponibles = (state.vehiculos.length || DEMO_VEHICULOS.length);
+      const enCurso = (state.reservas||[]).filter(x=>x.estado==="Aprobada").length;
+      $("#kpiDisponibles").textContent = disponibles;
+      $("#kpiEnCurso").textContent = enCurso;
+    }
+
+    // ------------------ Datos / Estadísticas ------------------
+    function buildCharts(){
+      // destruir si existen
+      Object.values(state.charts).forEach(ch=> ch?.destroy?.());
+      state.charts = {};
+
+      // agregamos un conteo por depto
+      const byDept = {};
+      (state.reservas||[]).forEach(r=>{
+        if(!r.depto) return;
+        byDept[r.depto] = (byDept[r.depto]||0)+1;
+      });
+      const deptos = Object.keys(byDept);
+      const vals   = Object.values(byDept);
+
+      // tiempo (demo simple: últimos N registros)
+      const labelsT = (state.reservas||[]).map(r=>r.fecha?.slice(0,10) || "");
+      const dataT   = (state.reservas||[]).map(_=>1);
+
+      // tipos de vehículo (demo)
+      const byTipo = {};
+      (state.reservas||[]).forEach(r=>{
+        const t = r.vehiculo || "Sin asignar";
+        byTipo[t] = (byTipo[t]||0)+1;
+      });
+
+      // KPIs
+      $("#kpiTotal").textContent = state.reservas.length;
+      const aprob = state.reservas.filter(r=>r.estado==="Aprobada").length;
+      $("#kpiAprob").textContent = state.reservas.length? Math.round(100*aprob/state.reservas.length)+"%" : "—";
+      $("#kpiVehAct").textContent = (state.vehiculos.length || DEMO_VEHICULOS.length);
+      $("#kpiOcup").textContent   = state.reservas.length? Math.round(100*aprob/(state.vehiculos.length||DEMO_VEHICULOS.length))+"%" : "—";
+
+      // Tabla “principales deptos”
+      const total = state.reservas.length || 1;
+      const tbody = $("#tbodyDeptos"); tbody.innerHTML="";
+      deptos
+        .map((d,i)=>({ d, v: vals[i] }))
+        .sort((a,b)=>b.v-a.v)
+        .forEach(it=>{
+          const tr = el("tr","border-t");
+          tr.innerHTML = `
+            <td class="py-2 pr-4">${it.d}</td>
+            <td class="py-2 pr-4">${it.v}</td>
+            <td class="py-2">${Math.round(100*it.v/total)}%</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      // Charts
+      state.charts.deptos = new Chart($("#chartDeptos"), {
+        type: "bar",
+        data: { labels: deptos, datasets: [{ label: "Solicitudes", data: vals }] },
+        options: { plugins:{legend:{display:false}}, responsive:true, maintainAspectRatio:false }
+      });
+
+      state.charts.tiempo = new Chart($("#chartTiempo"), {
+        type: "line",
+        data: { labels: labelsT, datasets: [{ label:"Solicitudes", data: dataT }] },
+        options: { plugins:{legend:{display:false}}, responsive:true, maintainAspectRatio:false }
+      });
+
+      state.charts.tipos = new Chart($("#chartTipos"), {
+        type: "doughnut",
+        data: { labels: Object.keys(byTipo), datasets: [{ data: Object.values(byTipo) }] },
+        options: { responsive:true, maintainAspectRatio:false }
+      });
+    }
+
+    async function cargarDatos(){
+      // si tu backend entrega /estadisticas, puedes reemplazar por fetch.
+      buildCharts();
+    }
+
+    // ------------------ Init ------------------
+    async function init(){
+      // Tabs
+      document.querySelectorAll(".tablink").forEach(b=>{
+        b.addEventListener("click", ()=> setActiveTab(b.dataset.tab));
+      });
+      $("#tabMobile").addEventListener("change", (e)=> setActiveTab(e.target.value));
+
+      await loadApiUrl();
+      // Vehículos (si tuvieras un vehiculos/list.json, lo leemos)
+      try{
+        const r = await fetch("./vehiculos/list.json",{ cache:"no-store" });
+        if(r.ok){ state.vehiculos = await r.json(); }
+      } catch { /* demo fallback */ }
+
+      loadCombosRegistro();
+      renderVehiculos();
+      await cargarReservas();
+      await refreshKPIs();
+      await cargarDatos();
+
+      setActiveTab("registro");
+    }
+
+    init();
   </script>
 </body>
 </html>
