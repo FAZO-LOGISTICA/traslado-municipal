@@ -1,0 +1,6 @@
+[
+  { "id": "FORD4X4",  "tipo": "FORD 4X4",          "patente": "AB-DF12", "capacidad": "5 PAX",  "foto": "./vehiculos/ford4x4.jpg" },
+  { "id": "CAMIONETA","tipo": "CAMIONETA",         "patente": "CD-EF34", "capacidad": "3 PAX",  "foto": "./vehiculos/camioneta.jpg" },
+  { "id": "CARGA",    "tipo": "VEHÍCULO DE CARGA", "patente": "GH-IJ56", "capacidad": "1.5T",   "foto": "./vehiculos/carga.jpg" },
+  { "id": "VAN",      "tipo": "VAN",               "patente": "KL-MN78", "capacidad": "10 PAX", "foto": "./vehiculos/van.jpg" }
+]
