@@ -13,47 +13,24 @@
     .btn-sec { @apply bg-slate-200 text-slate-800 hover:bg-slate-300; }
     .card { @apply bg-white/95 backdrop-blur rounded-2xl shadow p-5; }
   </style>
-
-  <!-- Chart.js (para pestaña Datos) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="text-slate-800">
+
   <!-- Fondo marca de agua -->
   <div class="fixed inset-0 -z-10 opacity-25"
-       style="background-image:url('./assets/fondo-valpo.jpg');background-size:cover;background-position:center;"></div>
+       style="background-image:url('/assets/fondo-valpo.jpg'); background-size:cover; background-position:center;">
+  </div>
 
   <!-- Header -->
   <header class="bg-emerald-900 text-white px-4 py-3 sticky top-0 z-50 shadow">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <img src="./assets/logo-valparaiso.png" alt="Valparaíso" class="w-9 h-9 object-contain"/>
-        <div class="leading-tight">
-          <h1 class="text-xl sm:text-2xl font-extrabold tracking-wide">TRASLADO MUNICIPAL</h1>
-          <p class="text-emerald-100 text-xs sm:text-sm">RESERVAS Y GESTIÓN DE VEHÍCULOS</p>
-        </div>
-      </div>
-
-      <!-- Nav -->
-      <nav class="hidden md:flex items-center gap-1">
-        <button data-tab="registro" class="tablink btn btn-sec">REGISTRO</button>
-        <button data-tab="vehiculos" class="tablink btn btn-sec">VEHÍCULOS & HORARIOS</button>
-        <button data-tab="reservas"  class="tablink btn btn-sec">RESERVAS</button>
-        <button data-tab="datos"     class="tablink btn btn-sec">DATOS</button>
-      </nav>
-
-      <div class="md:hidden">
-        <select id="tabMobile" class="bg-emerald-800 text-white rounded px-3 py-2">
-          <option value="registro">REGISTRO</option>
-          <option value="vehiculos">VEHÍCULOS & HORARIOS</option>
-          <option value="reservas">RESERVAS</option>
-          <option value="datos">DATOS</option>
-        </select>
-      </div>
+    <div class="max-w-4xl mx-auto flex items-center gap-4">
+      <img src="/assets/logo-valparaiso.png" alt="Valparaíso" class="h-12 w-auto object-contain"/>
+      <h1 class="text-2xl font-extrabold tracking-wide">TRASLADO MUNICIPAL</h1>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto p-4 space-y-6">
-    <!-- ============ REGISTRO (ACTUALIZADO) ============ -->
+  <main class="max-w-4xl mx-auto p-6">
+    <!-- ============ REGISTRO ============ -->
     <section id="view-registro" class="space-y-6">
       <div class="card">
         <h2 class="text-2xl font-bold mb-4">NUEVA RESERVA</h2>
@@ -81,117 +58,20 @@
 
           <div class="md:col-span-2 flex items-center gap-3">
             <button type="button" id="btnSiguiente" class="btn btn-primario">SIGUIENTE</button>
-            <button type="button" id="btnCancelar"  class="btn btn-sec">CANCELAR</button>
+            <button type="button" id="btnCancelar" class="btn btn-sec">CANCELAR</button>
             <span id="msgRegistro" class="text-sm"></span>
           </div>
         </form>
       </div>
     </section>
-
-    <!-- ============ VEHÍCULOS & HORARIOS ============ -->
-    <section id="view-vehiculos" class="hidden space-y-5">
-      <div class="card">
-        <div class="flex items-start justify-between mb-4">
-          <h2 class="text-2xl font-bold">VEHÍCULOS & HORARIOS</h2>
-          <div id="resumenSolicitante" class="text-xs text-slate-600"></div>
-        </div>
-        <div id="listaVehiculos" class="space-y-4"></div>
-      </div>
-    </section>
-
-    <!-- ============ RESERVAS ============ -->
-    <section id="view-reservas" class="hidden space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold">RESERVAS</h2>
-        <button id="btnRefrescarReservas" class="btn btn-sec">REFRESCAR</button>
-      </div>
-      <div class="card overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="text-left text-slate-600">
-            <tr>
-              <th class="py-2 pr-4">FECHA</th>
-              <th class="py-2 pr-4">FUNCIONARIO</th>
-              <th class="py-2 pr-4">DEPARTAMENTO</th>
-              <th class="py-2 pr-4">DIRECCIÓN</th>
-              <th class="py-2 pr-4">VEHÍCULO</th>
-              <th class="py-2 pr-4">HORARIO</th>
-              <th class="py-2 pr-4">ESTADO</th>
-              <th class="py-2">ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyReservas" class="align-top"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ============ DATOS ============ -->
-    <section id="view-datos" class="hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="card"><div class="text-xs text-slate-500">TOTAL SOLICITUDES</div><div id="kpiTotal" class="text-2xl font-bold">—</div></div>
-        <div class="card"><div class="text-xs text-slate-500">TASA APROBACIÓN</div><div id="kpiAprob" class="text-2xl font-bold">—</div></div>
-        <div class="card"><div class="text-xs text-slate-500">VEHÍCULOS ACTIVOS</div><div id="kpiVehAct" class="text-2xl font-bold">—</div></div>
-        <div class="card"><div class="text-xs text-slate-500">% OCUPACIÓN</div><div id="kpiOcup" class="text-2xl font-bold">—</div></div>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="card"><canvas id="chartDeptos" height="220"></canvas></div>
-        <div class="card"><canvas id="chartTiempo"  height="220"></canvas></div>
-        <div class="card"><canvas id="chartTipos"   height="220"></canvas></div>
-      </div>
-      <div class="card">
-        <h3 class="text-lg font-semibold mb-2">PRINCIPALES DEPARTAMENTOS</h3>
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead class="text-left text-slate-600">
-              <tr><th class="py-2 pr-4">DEPARTAMENTO</th><th class="py-2 pr-4">SOLICITUDES</th><th class="py-2">% DEL TOTAL</th></tr>
-            </thead>
-            <tbody id="tbodyDeptos"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
   </main>
 
-  <!-- ================== JS ================== -->
+  <!-- Script mínimo -->
   <script>
-    // ---------- Estado global ----------
-    const state = {
-      apiUrl: null,
-      registro: null,      // datos de la pestaña Registro
-      vehiculos: [],
-      reservas: [],
-      horariosBase: ["08:00 - 09:00","09:00 - 10:00","10:00 - 11:00","11:00 - 12:00","12:00 - 13:00","14:00 - 15:00","15:00 - 16:00","16:00 - 17:00"],
-      charts: {}
-    };
+    const state = { registro: null };
     const $ = (s)=>document.querySelector(s);
-    const el=(t,c="")=>{const n=document.createElement(t); if(c) n.className=c; return n;};
-    const up=(v)=> (v||"").trim().toUpperCase();
+    const up = (v)=> (v||"").trim().toUpperCase();
 
-    // Leer api.json (si existe)
-    async function loadApiUrl(){
-      try{
-        const r = await fetch("./api.json",{cache:"no-store"});
-        if(r.ok){ const cfg = await r.json(); state.apiUrl = cfg.webAppUrl || null; }
-      }catch{}
-    }
-
-    // Tabs
-    function setActiveTab(tab){
-      document.querySelectorAll(".tablink").forEach(b=>{
-        const a = b.dataset.tab===tab;
-        b.classList.toggle("btn-primario", a);
-        b.classList.toggle("text-white", a);
-      });
-      ["registro","vehiculos","reservas","datos"].forEach(v=>{
-        $("#view-"+v).classList.toggle("hidden", v!==tab);
-      });
-      $("#tabMobile").value = tab;
-      if(tab==="vehiculos") pintarResumenSolicitante();
-      window.scrollTo({top:0,behavior:"smooth"});
-    }
-    document.querySelectorAll(".tablink").forEach(b=> b.addEventListener("click",()=>setActiveTab(b.dataset.tab)));
-    $("#tabMobile").addEventListener("change",(e)=> setActiveTab(e.target.value));
-
-    // ---------- REGISTRO ----------
     $("#btnSiguiente").addEventListener("click", ()=>{
       const nombre = up($("#r-nombre").value);
       const depto  = up($("#r-depto").value);
@@ -207,7 +87,7 @@
       state.registro = { nombre, depto, direccion: direc, motivo };
       msg.textContent = "✓ DATOS GUARDADOS. CONTINÚE CON LA SELECCIÓN DE VEHÍCULO Y HORARIO.";
       msg.className = "text-emerald-700 text-sm";
-      setActiveTab("vehiculos");
+      // Aquí iría el salto a la pestaña de vehículos
     });
 
     $("#btnCancelar").addEventListener("click", ()=>{
@@ -215,170 +95,6 @@
       $("#msgRegistro").textContent = "";
       state.registro = null;
     });
-
-    // ---------- VEHÍCULOS & HORARIOS ----------
-    function pintarResumenSolicitante(){
-      const r = state.registro;
-      $("#resumenSolicitante").innerHTML = r
-        ? `<div><div><b>SOLICITANTE:</b> ${r.nombre}</div><div><b>DEPTO:</b> ${r.depto}</div><div><b>DIRECCIÓN:</b> ${r.direccion}</div></div>`
-        : `<span class="text-red-600">⚠️ COMPLETE PRIMERO EL REGISTRO.</span>`;
-    }
-
-    function renderVehiculos(){
-      const cont = $("#listaVehiculos"); cont.innerHTML = "";
-      const data = state.vehiculos.length ? state.vehiculos : [
-        { id:"FORD4X4",  tipo:"FORD 4X4",          patente:"AB-DF12", capacidad:"5 PAX",  foto:"./vehiculos/ford4x4.jpg" },
-        { id:"CAMIONETA",tipo:"CAMIONETA",         patente:"CD-EF34", capacidad:"3 PAX",  foto:"./vehiculos/camioneta.jpg" },
-        { id:"CARGA",    tipo:"VEHÍCULO DE CARGA", patente:"GH-IJ56", capacidad:"1.5T",   foto:"./vehiculos/carga.jpg" },
-        { id:"VAN",      tipo:"VAN",               patente:"KL-MN78", capacidad:"10 PAX", foto:"./vehiculos/van.jpg" },
-      ];
-
-      data.forEach(v=>{
-        const card = el("div","border rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center");
-        const img  = el("img","w-full md:w-48 h-32 object-cover rounded-xl bg-slate-200");
-        img.src = v.foto || "./vehiculos/vehiculo.jpg"; img.alt=v.tipo;
-
-        const info = el("div","flex-1 w-full");
-        info.innerHTML = `
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <div>
-              <div class="text-lg font-semibold">${v.tipo}</div>
-              <div class="text-sm text-slate-500">PATENTE: ${v.patente} · CAP.: ${v.capacidad||"-"}</div>
-            </div>
-          </div>`;
-
-        const schedule = el("div","grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2");
-        state.horariosBase.forEach((h,idx)=>{
-          const ocupado = (idx===2 || idx===6); // DEMO: algunos ocupados
-          const b = el("button","px-3 py-2 rounded-lg border text-sm " + (ocupado ? "bg-slate-200 text-slate-500 cursor-not-allowed" : "hover:bg-emerald-50 border-emerald-200"));
-          b.textContent = h; b.disabled = ocupado;
-          if(!ocupado) b.addEventListener("click", ()=> reservarHorario(v,h));
-          schedule.appendChild(b);
-        });
-
-        const right = el("div","flex-1 w-full"); right.appendChild(schedule);
-        card.appendChild(img); card.appendChild(info); card.appendChild(right);
-        cont.appendChild(card);
-      });
-    }
-
-    async function reservarHorario(vehiculo, hora){
-      if(!state.registro){
-        setActiveTab("registro");
-        $("#msgRegistro").textContent = "⚠️ COMPLETE PRIMERO EL REGISTRO.";
-        $("#msgRegistro").className = "text-red-600 text-sm";
-        return;
-      }
-      state.registro.vehiculo = `${vehiculo.tipo} (${vehiculo.patente})`;
-      state.registro.horario = hora;
-
-      // Guardar en backend (si api.json existe). Si no, queda en demo local.
-      try{
-        if(state.apiUrl){
-          const payload = { op:"crear_reserva", ...state.registro, timestamp: new Date().toISOString(), fecha: new Date().toLocaleString() };
-          await fetch(state.apiUrl, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
-        } else {
-          state.reservas.push({ fecha:new Date().toLocaleString(), nombre:state.registro.nombre, depto:state.registro.depto, direccion:state.registro.direccion, vehiculo:state.registro.vehiculo, horario:state.registro.horario, estado:"PENDIENTE" });
-        }
-      }catch(e){ console.warn("No se pudo guardar en backend:", e); }
-
-      await cargarReservas();
-      setActiveTab("reservas");
-    }
-    window.reservarHorario = reservarHorario;
-
-    // ---------- RESERVAS ----------
-    function renderReservas(){
-      const tb = $("#tbodyReservas"); tb.innerHTML = "";
-      (state.reservas||[]).forEach((r,i)=>{
-        const tr = el("tr","border-t");
-        tr.innerHTML = `
-          <td class="py-2 pr-4">${r.fecha||"-"}</td>
-          <td class="py-2 pr-4">${r.nombre||"-"}</td>
-          <td class="py-2 pr-4">${r.depto||"-"}</td>
-          <td class="py-2 pr-4">${r.direccion||"-"}</td>
-          <td class="py-2 pr-4">${r.vehiculo||"-"}</td>
-          <td class="py-2 pr-4">${r.horario||"-"}</td>
-          <td class="py-2 pr-4">${r.estado||"PENDIENTE"}</td>
-          <td class="py-2 flex gap-2">
-            <button class="btn btn-primario text-xs" onclick="cambiarEstado(${i},'APROBADA')">APROBAR</button>
-            <button class="btn btn-sec text-xs" onclick="cambiarEstado(${i},'RECHAZADA')">RECHAZAR</button>
-          </td>`;
-        tb.appendChild(tr);
-      });
-    }
-    async function cargarReservas(){
-      try{
-        if(state.apiUrl){
-          const r = await fetch(state.apiUrl + "?op=listar_reservas",{cache:"no-store"});
-          const j = await r.json();
-          state.reservas = j.reservas || [];
-        } else {
-          if(state.reservas.length===0){
-            state.reservas = [
-              { fecha:"2025-09-14 09:00", nombre:"ANA PIZARRO", depto:"OPERACIONES", direccion:"DIRECCIÓN DE OPERACIONES", vehiculo:"FORD 4X4", horario:"10:00 - 11:00", estado:"APROBADA" }
-            ];
-          }
-        }
-      }catch(e){ console.warn("No se pudo cargar reservas:", e); }
-      renderReservas(); buildCharts();
-    }
-    async function cambiarEstado(i, nuevo){
-      const it = state.reservas[i]; if(!it) return;
-      it.estado = nuevo; renderReservas(); buildCharts();
-      // (si quieres, aquí llamas a Apps Script para actualizar estado por ID)
-    }
-    window.cambiarEstado = cambiarEstado;
-
-    // ---------- Datos / Gráficos ----------
-    function buildCharts(){
-      // Destruir previos
-      if(state.charts.deptos){ state.charts.deptos.destroy(); }
-      if(state.charts.tiempo){ state.charts.tiempo.destroy(); }
-      if(state.charts.tipos){ state.charts.tipos.destroy(); }
-
-      const byDept = {};
-      (state.reservas||[]).forEach(r=> { if(r.depto) byDept[r.depto]=(byDept[r.depto]||0)+1; });
-      const deptos = Object.keys(byDept), vals = Object.values(byDept);
-
-      const labelsT = (state.reservas||[]).map(r=> r.fecha?.slice(0,10) || "");
-      const dataT = (state.reservas||[]).map(_=>1);
-
-      const byTipo = {};
-      (state.reservas||[]).forEach(r=> { const t=r.vehiculo||"SIN ASIGNAR"; byTipo[t]=(byTipo[t]||0)+1; });
-
-      $("#kpiTotal").textContent = state.reservas.length;
-      const aprob = state.reservas.filter(r=>r.estado==="APROBADA").length;
-      $("#kpiAprob").textContent = state.reservas.length? Math.round(100*aprob/state.reservas.length)+"%" : "—";
-      $("#kpiVehAct").textContent = (state.vehiculos.length || 4);
-      $("#kpiOcup").textContent = state.reservas.length? Math.round(100*aprob/(state.vehiculos.length||4))+"%" : "—";
-
-      // tabla deptos
-      const tbody = $("#tbodyDeptos"); tbody.innerHTML="";
-      const total = state.reservas.length || 1;
-      deptos.map((d,i)=>({d,v:vals[i]})).sort((a,b)=>b.v-a.v).forEach(it=>{
-        const tr = el("tr","border-t");
-        tr.innerHTML = `<td class="py-2 pr-4">${it.d}</td><td class="py-2 pr-4">${it.v}</td><td class="py-2">${Math.round(100*it.v/total)}%</td>`;
-        tbody.appendChild(tr);
-      });
-
-      state.charts.deptos = new Chart($("#chartDeptos"), { type:"bar", data:{ labels: deptos, datasets:[{ data: vals, label:"SOLICITUDES" }] }, options:{ plugins:{legend:{display:false}}, responsive:true, maintainAspectRatio:false }});
-      state.charts.tiempo = new Chart($("#chartTiempo"), { type:"line", data:{ labels: labelsT, datasets:[{ data: dataT, label:"SOLICITUDES" }] }, options:{ plugins:{legend:{display:false}}, responsive:true, maintainAspectRatio:false }});
-      state.charts.tipos  = new Chart($("#chartTipos"),  { type:"doughnut", data:{ labels:Object.keys(byTipo), datasets:[{ data:Object.values(byTipo) }] }, options:{ responsive:true, maintainAspectRatio:false }});
-    }
-
-    // ---------- Init ----------
-    async function init(){
-      await loadApiUrl();
-
-      // Cargar catálogo de vehículos si existe
-      try{ const r=await fetch("./vehiculos/list.json",{cache:"no-store"}); if(r.ok){ state.vehiculos = await r.json(); } } catch{}
-
-      renderVehiculos();
-      await cargarReservas();
-      setActiveTab("registro");
-    }
-    init();
   </script>
 </body>
 </html>
