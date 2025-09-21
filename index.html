@@ -13,23 +13,50 @@
     .btn-sec { @apply bg-slate-200 text-slate-800 hover:bg-slate-300; }
     .card { @apply bg-white/95 backdrop-blur rounded-2xl shadow p-5; }
   </style>
-</head>
-<body class="text-slate-800">
 
-  <!-- Fondo marca de agua -->
-  <div class="fixed inset-0 -z-10 opacity-25"
-       style="background-image:url('/assets/fondo-valpo.jpg'); background-size:cover; background-position:center;">
+  <!-- Chart.js (para pestaña Datos) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+  <!-- Fondo marca de agua con velo -->
+  <div class="fixed inset-0 -z-10">
+    <div class="absolute inset-0"
+         style="background-image:url('./assets/fondo-valpo.jpg');background-size:cover;background-position:center;"></div>
+    <div class="absolute inset-0 bg-white/30 backdrop-blur-[1px]"></div>
   </div>
 
   <!-- Header -->
-  <header class="bg-emerald-900 text-white px-4 py-3 sticky top-0 z-50 shadow">
-    <div class="max-w-4xl mx-auto flex items-center gap-4">
-      <img src="/assets/logo-valparaiso.png" alt="Valparaíso" class="h-12 w-auto object-contain"/>
-      <h1 class="text-2xl font-extrabold tracking-wide">TRASLADO MUNICIPAL</h1>
+  <header class="bg-emerald-900 text-white px-4 py-6 sticky top-0 z-50 shadow">
+    <div class="max-w-6xl mx-auto flex flex-col items-center gap-3 text-center">
+
+      <!-- Logo + título -->
+      <div class="flex items-center gap-3">
+        <!-- Pastilla verde detrás del logo -->
+        <div class="bg-emerald-800 p-2 rounded-md shadow">
+          <img src="./assets/logo-valparaiso.png" alt="Valparaíso" class="h-10 w-auto object-contain"/>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide">TRASLADO MUNICIPAL</h1>
+      </div>
+
+      <!-- Subtítulo -->
+      <p class="text-emerald-100 text-sm md:text-base">
+        RESERVAS Y GESTIÓN DE VEHÍCULOS
+      </p>
+
+      <!-- Nav -->
+      <nav class="mt-3 flex flex-wrap items-center justify-center gap-2">
+        <button data-tab="registro"  class="tablink btn btn-sec">REGISTRO</button>
+        <button data-tab="vehiculos" class="tablink btn btn-sec">VEHÍCULOS & HORARIOS</button>
+        <button data-tab="reservas"  class="tablink btn btn-sec">RESERVAS</button>
+        <button data-tab="datos"     class="tablink btn btn-sec">DATOS</button>
+      </nav>
+
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto p-6">
+  <!-- CONTENIDO -->
+  <main class="max-w-6xl mx-auto p-6 space-y-6">
     <!-- ============ REGISTRO ============ -->
     <section id="view-registro" class="space-y-6">
       <div class="card">
@@ -40,61 +67,94 @@
             <label class="block text-sm mb-1">NOMBRE DEL FUNCIONARIO</label>
             <input id="r-nombre" type="text" class="w-full border rounded-lg px-3 py-2 uppercase" placeholder="ESCRIBA EL NOMBRE"/>
           </div>
-
           <div>
             <label class="block text-sm mb-1">DEPARTAMENTO</label>
             <input id="r-depto" type="text" class="w-full border rounded-lg px-3 py-2 uppercase" placeholder="EJ: GESTIÓN DE FLOTA"/>
           </div>
-
           <div class="md:col-span-2">
             <label class="block text-sm mb-1">DIRECCIÓN</label>
             <input id="r-direccion" type="text" class="w-full border rounded-lg px-3 py-2 uppercase" placeholder="EJ: DIRECCIÓN DE OPERACIONES"/>
           </div>
-
           <div class="md:col-span-2">
             <label class="block text-sm mb-1">MOTIVO DEL TRASLADO</label>
             <input id="r-motivo" type="text" class="w-full border rounded-lg px-3 py-2 uppercase" placeholder="ESCRIBA EL MOTIVO"/>
           </div>
-
           <div class="md:col-span-2 flex items-center gap-3">
             <button type="button" id="btnSiguiente" class="btn btn-primario">SIGUIENTE</button>
-            <button type="button" id="btnCancelar" class="btn btn-sec">CANCELAR</button>
+            <button type="button" id="btnCancelar"  class="btn btn-sec">CANCELAR</button>
             <span id="msgRegistro" class="text-sm"></span>
           </div>
         </form>
       </div>
     </section>
+
+    <!-- ============ VEHÍCULOS & HORARIOS ============ -->
+    <section id="view-vehiculos" class="hidden space-y-5">
+      <div class="card">
+        <div class="flex items-start justify-between mb-4">
+          <h2 class="text-2xl font-bold">VEHÍCULOS & HORARIOS</h2>
+          <div id="resumenSolicitante" class="text-xs text-slate-600"></div>
+        </div>
+        <div id="listaVehiculos" class="space-y-4"></div>
+      </div>
+    </section>
+
+    <!-- ============ RESERVAS ============ -->
+    <section id="view-reservas" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold">RESERVAS</h2>
+        <button id="btnRefrescarReservas" class="btn btn-sec">REFRESCAR</button>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="text-left text-slate-600">
+            <tr>
+              <th class="py-2 pr-4">FECHA</th>
+              <th class="py-2 pr-4">FUNCIONARIO</th>
+              <th class="py-2 pr-4">DEPARTAMENTO</th>
+              <th class="py-2 pr-4">DIRECCIÓN</th>
+              <th class="py-2 pr-4">VEHÍCULO</th>
+              <th class="py-2 pr-4">HORARIO</th>
+              <th class="py-2 pr-4">ESTADO</th>
+              <th class="py-2">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyReservas" class="align-top"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ DATOS ============ -->
+    <section id="view-datos" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="card"><div class="text-xs text-slate-500">TOTAL SOLICITUDES</div><div id="kpiTotal" class="text-2xl font-bold">—</div></div>
+        <div class="card"><div class="text-xs text-slate-500">TASA APROBACIÓN</div><div id="kpiAprob" class="text-2xl font-bold">—</div></div>
+        <div class="card"><div class="text-xs text-slate-500">VEHÍCULOS ACTIVOS</div><div id="kpiVehAct" class="text-2xl font-bold">—</div></div>
+        <div class="card"><div class="text-xs text-slate-500">% OCUPACIÓN</div><div id="kpiOcup" class="text-2xl font-bold">—</div></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card"><canvas id="chartDeptos" height="220"></canvas></div>
+        <div class="card"><canvas id="chartTiempo"  height="220"></canvas></div>
+        <div class="card"><canvas id="chartTipos"   height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <h3 class="text-lg font-semibold mb-2">PRINCIPALES DEPARTAMENTOS</h3>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="text-left text-slate-600">
+              <tr><th class="py-2 pr-4">DEPARTAMENTO</th><th class="py-2 pr-4">SOLICITUDES</th><th class="py-2">% DEL TOTAL</th></tr>
+            </thead>
+            <tbody id="tbodyDeptos"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <!-- Script mínimo -->
+  <!-- ================== JS ================== -->
   <script>
-    const state = { registro: null };
-    const $ = (s)=>document.querySelector(s);
-    const up = (v)=> (v||"").trim().toUpperCase();
-
-    $("#btnSiguiente").addEventListener("click", ()=>{
-      const nombre = up($("#r-nombre").value);
-      const depto  = up($("#r-depto").value);
-      const direc  = up($("#r-direccion").value);
-      const motivo = up($("#r-motivo").value);
-      const msg = $("#msgRegistro");
-
-      if(!nombre || !depto || !direc){
-        msg.textContent = "⚠️ NOMBRE, DEPARTAMENTO Y DIRECCIÓN SON OBLIGATORIOS.";
-        msg.className = "text-red-600 text-sm";
-        return;
-      }
-      state.registro = { nombre, depto, direccion: direc, motivo };
-      msg.textContent = "✓ DATOS GUARDADOS. CONTINÚE CON LA SELECCIÓN DE VEHÍCULO Y HORARIO.";
-      msg.className = "text-emerald-700 text-sm";
-      // Aquí iría el salto a la pestaña de vehículos
-    });
-
-    $("#btnCancelar").addEventListener("click", ()=>{
-      $("#formRegistro").reset();
-      $("#msgRegistro").textContent = "";
-      state.registro = null;
-    });
+    // Estado global y helpers aquí...
+    // (mantén tu JS existente de tabs, registro, vehiculos, reservas, datos)
   </script>
 </body>
 </html>
