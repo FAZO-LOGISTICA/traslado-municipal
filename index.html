@@ -14,12 +14,12 @@
     .card { @apply bg-white/95 backdrop-blur rounded-2xl shadow p-5; }
   </style>
 
-  <!-- Chart.js (para pestaña Datos) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-  <!-- Fondo marca de agua con velo -->
+  <!-- Fondo marca de agua -->
   <div class="fixed inset-0 -z-10">
     <div class="absolute inset-0"
          style="background-image:url('./assets/fondo-valpo.jpg');background-size:cover;background-position:center;"></div>
@@ -27,31 +27,29 @@
   </div>
 
   <!-- Header -->
-  <header class="bg-emerald-900 text-white px-4 py-6 sticky top-0 z-50 shadow">
-    <div class="max-w-6xl mx-auto flex flex-col items-center gap-3 text-center">
+  <header class="bg-emerald-900 text-white px-6 py-6 sticky top-0 z-50 shadow">
+    <div class="max-w-7xl mx-auto flex items-center gap-6">
 
-      <!-- Logo + título -->
-      <div class="flex items-center gap-3">
-        <!-- Pastilla verde detrás del logo -->
-        <div class="bg-emerald-800 p-3 rounded-md shadow">
-          <img src="./assets/logo-valparaiso.png" alt="Valparaíso" class="h-16 md:h-20 w-auto object-contain"/>
-        </div>
-        <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide">TRASLADO MUNICIPAL</h1>
+      <!-- Logo gigante -->
+      <div class="flex-shrink-0">
+        <img src="./assets/logo-valparaiso.png"
+             alt="Valparaíso"
+             class="h-24 md:h-28 lg:h-32 object-contain"/>
       </div>
 
-      <!-- Subtítulo -->
-      <p class="text-emerald-100 text-sm md:text-base">
-        RESERVAS Y GESTIÓN DE VEHÍCULOS
-      </p>
+      <!-- Texto y navegación -->
+      <div class="flex-1 flex flex-col items-center justify-center text-center">
+        <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide">TRASLADO MUNICIPAL</h1>
+        <p class="text-emerald-100 text-sm md:text-base">RESERVAS Y GESTIÓN DE VEHÍCULOS</p>
 
-      <!-- Nav -->
-      <nav class="mt-3 flex flex-wrap items-center justify-center gap-2">
-        <button data-tab="registro"  class="tablink btn btn-sec">REGISTRO</button>
-        <button data-tab="vehiculos" class="tablink btn btn-sec">VEHÍCULOS & HORARIOS</button>
-        <button data-tab="reservas"  class="tablink btn btn-sec">RESERVAS</button>
-        <button data-tab="datos"     class="tablink btn btn-sec">DATOS</button>
-      </nav>
-
+        <!-- Nav -->
+        <nav class="mt-3 flex flex-wrap items-center justify-center gap-3">
+          <button data-tab="registro"  class="tablink btn btn-sec">REGISTRO</button>
+          <button data-tab="vehiculos" class="tablink btn btn-sec">VEHÍCULOS & HORARIOS</button>
+          <button data-tab="reservas"  class="tablink btn btn-sec">RESERVAS</button>
+          <button data-tab="datos"     class="tablink btn btn-sec">DATOS</button>
+        </nav>
+      </div>
     </div>
   </header>
 
