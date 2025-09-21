@@ -14,28 +14,24 @@
     .card { @apply bg-white/95 backdrop-blur rounded-2xl shadow p-5; }
   </style>
 
-  <!-- Chart.js (si luego activas la pestaña Datos) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
-
   <!-- Fondo -->
-  <div class="fixed inset-0 -z-10">
-    <div class="absolute inset-0"
-         style="background-image:url('./assets/fondo-valpo.jpg');background-size:cover;background-position:center;"></div>
-    <div class="absolute inset-0 bg-white/30 backdrop-blur-[1px]"></div>
-  </div>
+  <div class="fixed inset-0 -z-10 opacity-25"
+       style="background-image:url('./assets/fondo-valpo.jpg');background-size:cover;background-position:center;"></div>
 
-  <!-- Header institucional compacto -->
-  <header class="bg-emerald-900 text-white px-6 py-4 sticky top-0 z-50 shadow">
-    <div class="max-w-7xl mx-auto flex flex-col items-center text-center gap-2">
-      <img src="./assets/logo-valparaiso.png" alt="Valparaíso" class="h-24 md:h-28 lg:h-32 object-contain"/>
-      <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide">TRASLADO MUNICIPAL</h1>
-      <p class="text-emerald-100 text-base md:text-lg">RESERVAS Y GESTIÓN DE VEHÍCULOS</p>
+  <!-- Header -->
+  <header class="bg-emerald-900 text-white px-4 py-6 sticky top-0 z-50 shadow">
+    <div class="max-w-7xl mx-auto flex flex-col items-center justify-center gap-3">
+      <img src="./assets/logo-valparaiso.png" alt="Valparaíso" class="w-40 h-auto object-contain"/>
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-wide text-center">TRASLADO MUNICIPAL</h1>
+      <p class="text-emerald-100 text-lg">RESERVAS Y GESTIÓN DE VEHÍCULOS</p>
 
       <!-- Nav -->
-      <nav class="mt-2 flex flex-wrap items-center justify-center gap-3">
-        <button data-tab="registro"  class="tablink btn btn-sec">REGISTRO</button>
+      <nav class="flex items-center gap-4 mt-2">
+        <button data-tab="registro" class="tablink btn btn-sec">REGISTRO</button>
         <button data-tab="vehiculos" class="tablink btn btn-sec">VEHÍCULOS & HORARIOS</button>
         <button data-tab="reservas"  class="tablink btn btn-sec">RESERVAS</button>
         <button data-tab="datos"     class="tablink btn btn-sec">DATOS</button>
@@ -43,9 +39,8 @@
     </div>
   </header>
 
-  <!-- CONTENIDO -->
-  <main class="max-w-6xl mx-auto p-6 space-y-6">
-    <!-- REGISTRO -->
+  <main class="max-w-7xl mx-auto p-4 space-y-6">
+    <!-- ============ REGISTRO ============ -->
     <section id="view-registro" class="space-y-6">
       <div class="card">
         <h2 class="text-2xl font-bold mb-4">NUEVA RESERVA</h2>
@@ -75,30 +70,20 @@
       </div>
     </section>
 
-    <!-- VEHÍCULOS & HORARIOS -->
+    <!-- ============ VEHÍCULOS & HORARIOS ============ -->
     <section id="view-vehiculos" class="hidden space-y-5">
       <div class="card">
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
-          <div>
-            <h2 class="text-2xl font-bold">VEHÍCULOS & HORARIOS</h2>
-            <div id="resumenSolicitante" class="text-xs text-slate-600 mt-1"></div>
-          </div>
-          <div class="flex items-center gap-3">
-            <label class="text-sm">FECHA</label>
-            <input id="inputFecha" type="date" class="border rounded-lg px-3 py-2"/>
-            <span id="lblDia" class="text-sm text-slate-600"></span>
-          </div>
+        <div class="flex items-start justify-between mb-4">
+          <h2 class="text-2xl font-bold">VEHÍCULOS & HORARIOS</h2>
+          <div id="resumenSolicitante" class="text-xs text-slate-600"></div>
         </div>
         <div id="listaVehiculos" class="space-y-4"></div>
       </div>
     </section>
 
-    <!-- RESERVAS (tabla simple) -->
+    <!-- ============ RESERVAS ============ -->
     <section id="view-reservas" class="hidden space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold">RESERVAS</h2>
-        <button id="btnRefrescarReservas" class="btn btn-sec">REFRESCAR</button>
-      </div>
+      <h2 class="text-2xl font-bold">RESERVAS</h2>
       <div class="card overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead class="text-left text-slate-600">
@@ -117,301 +102,87 @@
       </div>
     </section>
 
-    <!-- DATOS (placeholder) -->
+    <!-- ============ DATOS ============ -->
     <section id="view-datos" class="hidden space-y-6">
-      <div class="card">Próximamente KPIs y gráficos.</div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="card"><div class="text-xs text-slate-500">TOTAL SOLICITUDES</div><div id="kpiTotal" class="text-2xl font-bold">—</div></div>
+        <div class="card"><div class="text-xs text-slate-500">TASA APROBACIÓN</div><div id="kpiAprob" class="text-2xl font-bold">—</div></div>
+        <div class="card"><div class="text-xs text-slate-500">VEHÍCULOS ACTIVOS</div><div id="kpiVehAct" class="text-2xl font-bold">—</div></div>
+        <div class="card"><div class="text-xs text-slate-500">% OCUPACIÓN</div><div id="kpiOcup" class="text-2xl font-bold">—</div></div>
+      </div>
     </section>
   </main>
 
   <!-- ================== JS ================== -->
   <script>
-    // ------- Utilidades -------
-    const $ = s => document.querySelector(s);
-    const up = v => (v||"").trim().toUpperCase();
-    const hoyISO = () => { const d = new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); };
-
-    function toISODate(date){
-      const d = new Date(date);
-      d.setHours(0,0,0,0);
-      return d.toISOString().slice(0,10);
-    }
-    function formatDiaSemana(iso){
-      const d = new Date(iso+"T00:00:00");
-      return d.toLocaleDateString("es-CL",{ weekday:"long", day:"2-digit", month:"2-digit" }).toUpperCase();
-    }
-
-    // ------- Estado global -------
     const state = {
-      apiUrl: null,
       registro: null,
       vehiculos: [],
-      reservas: [],
-      ocupacion: new Set(),
-      selectedDate: hoyISO(),
-      horariosBase: [] // se llena 08:00..23:59
+      horariosBase: []
     };
-
-    // Generar horarios 08:00..23:59 (bloques de 1h, último 23:00–23:59)
-    function buildHorarios(){
-      const arr = [];
-      for(let h=8; h<23; h++){
-        const hh = h.toString().padStart(2,"0");
-        const hh2 = (h+1).toString().padStart(2,"0");
-        arr.push(`${hh}:00 - ${hh2}:00`);
-      }
-      arr.push("23:00 - 23:59");
-      state.horariosBase = arr;
-    }
+    const $ = (s)=>document.querySelector(s);
+    const el=(t,c="")=>{const n=document.createElement(t); if(c) n.className=c; return n;};
+    const up=(v)=> (v||"").trim().toUpperCase();
 
     // Tabs
     function setActiveTab(tab){
       ["registro","vehiculos","reservas","datos"].forEach(v=>{
-        const on = (v===tab);
-        document.getElementById("view-"+v).classList.toggle("hidden", !on);
+        $("#view-"+v).classList.toggle("hidden", v!==tab);
       });
-      document.querySelectorAll(".tablink").forEach(b=>{
-        const on = (b.dataset.tab===tab);
-        b.classList.toggle("btn-primario", on);
-      });
-      window.scrollTo({top:0, behavior:"smooth"});
     }
 
-    // Cargar apiUrl
-    async function loadApiUrl(){
-      try{
-        const r = await fetch("./api.json",{cache:"no-store"});
-        if(r.ok){ const j = await r.json(); state.apiUrl = j.webAppUrl || null; }
-      }catch{}
-    }
+    document.querySelectorAll(".tablink").forEach(b=> b.addEventListener("click",()=>setActiveTab(b.dataset.tab)));
 
-    // Registro
+    // ---------- REGISTRO ----------
     $("#btnSiguiente").addEventListener("click", ()=>{
       const nombre = up($("#r-nombre").value);
       const depto  = up($("#r-depto").value);
       const direc  = up($("#r-direccion").value);
       const motivo = up($("#r-motivo").value);
-      const msg = $("#msgRegistro");
-
       if(!nombre || !depto || !direc){
-        msg.textContent = "⚠️ NOMBRE, DEPARTAMENTO Y DIRECCIÓN SON OBLIGATORIOS.";
-        msg.className = "text-red-600 text-sm";
+        $("#msgRegistro").textContent = "⚠️ CAMPOS OBLIGATORIOS";
         return;
       }
       state.registro = { nombre, depto, direccion: direc, motivo };
-      msg.textContent = "✓ DATOS GUARDADOS. CONTINÚE CON LA SELECCIÓN DE VEHÍCULO Y HORARIO.";
-      msg.className = "text-emerald-700 text-sm";
-
-      pintarResumenSolicitante();
-      renderVehiculos(); // usa la fecha seleccionada
       setActiveTab("vehiculos");
+      pintarResumenSolicitante();
+      renderVehiculos();
     });
 
     $("#btnCancelar").addEventListener("click", ()=>{
       $("#formRegistro").reset();
-      $("#msgRegistro").textContent = "";
       state.registro = null;
+      $("#msgRegistro").textContent = "";
     });
 
-    // Vehículos
-    async function cargarVehiculos(){
-      try{
-        const r = await fetch("./vehiculos/list.json",{cache:"no-store"});
-        if(r.ok){ state.vehiculos = await r.json(); return; }
-      }catch{}
-      // demo
-      state.vehiculos = [
-        { id:"FORD4X4",  tipo:"FORD 4X4",          patente:"AB-DF12", capacidad:"5 PAX",  foto:"./vehiculos/ford4x4.jpg" },
-        { id:"CARGA",    tipo:"VEHÍCULO DE CARGA", patente:"GH-IJ56", capacidad:"1.5T",   foto:"./vehiculos/carga.jpg" },
-        { id:"CAMIONETA",tipo:"CAMIONETA",         patente:"CD-EF34", capacidad:"3 PAX",  foto:"./vehiculos/camioneta.jpg" },
-        { id:"VAN",      tipo:"VAN",               patente:"KL-MN78", capacidad:"10 PAX", foto:"./vehiculos/van.jpg" },
-      ];
-    }
-
+    // ---------- VEHÍCULOS ----------
     function pintarResumenSolicitante(){
       const r = state.registro;
       $("#resumenSolicitante").innerHTML = r
-        ? `<div><b>Solicitante:</b> ${r.nombre} · <b>Depto:</b> ${r.depto} · <b>Dirección:</b> ${r.direccion}</div>`
-        : `<span class="text-red-600">⚠️ Complete primero el registro.</span>`;
-    }
-
-    function buildOcupacion(){
-      state.ocupacion = new Set();
-      (state.reservas||[]).forEach(r=>{
-        // ocupados por fecha + vehiculo + horario (si no está rechazada)
-        if(r.estado!=="RECHAZADA" && r.vehiculo && r.horario && r.fecha){
-          const clave = `${r.fecha}|${r.vehiculo}|${r.horario}`;
-          state.ocupacion.add(clave);
-        }
-      });
+        ? `Solicitante: ${r.nombre} · Depto: ${r.depto} · Dirección: ${r.direccion}`
+        : `<span class="text-red-600">⚠️ COMPLETE EL REGISTRO</span>`;
     }
 
     function renderVehiculos(){
       const cont = $("#listaVehiculos"); cont.innerHTML = "";
-      $("#lblDia").textContent = formatDiaSemana(state.selectedDate);
+      const data = [
+        { id:"FORD4X4",  tipo:"FORD RANGER 4X4",   patente:"AB-DF12", capacidad:"5 PAX",  foto:"./vehiculos/ford_ranger_4x4.jpg" },
+        { id:"NAVARA",   tipo:"NISSAN NAVARA 4X2", patente:"CD-EF34", capacidad:"3 PAX",  foto:"./vehiculos/nissan_navara_4x2.jpg" },
+        { id:"KIA",      tipo:"KIA FRONTIER CARGA",patente:"GH-IJ56", capacidad:"1.5T",   foto:"./vehiculos/kia_frontier_carga.jpg" },
+        { id:"VAN",      tipo:"NISSAN NV350 14P",  patente:"KL-MN78", capacidad:"14 PAX", foto:"./vehiculos/nissan_nv350_14p.jpg" }
+      ];
 
-      state.vehiculos.forEach(v=>{
-        const card = document.createElement("div");
-        card.className = "border rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center bg-white/90";
-
-        const img  = document.createElement("img");
-        img.className = "w-full md:w-48 h-32 object-cover rounded-xl bg-slate-200";
-        img.src = v.foto || "./vehiculos/vehiculo.jpg";
-        img.alt = v.tipo;
-
-        const info = document.createElement("div");
-        info.className = "flex-1 w-full";
-        info.innerHTML = `
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <div>
-              <div class="text-lg font-semibold">${v.tipo}</div>
-              <div class="text-sm text-slate-500">PATENTE: ${v.patente} · CAP.: ${v.capacidad||"-"}</div>
-            </div>
-          </div>`;
-
-        const schedule = document.createElement("div");
-        schedule.className = "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2";
-        state.horariosBase.forEach(h=>{
-          const veh = `${v.tipo} (${v.patente})`;
-          const clave = `${state.selectedDate}|${veh}|${h}`;
-          const ocupado = state.ocupacion.has(clave);
-          const btn = document.createElement("button");
-          btn.textContent = h;
-          btn.className = "px-3 py-2 rounded-lg border text-sm " +
-            (ocupado ? "bg-slate-300 text-slate-500 cursor-not-allowed"
-                     : "hover:bg-emerald-50 border-emerald-200");
-          btn.disabled = ocupado;
-          if(!ocupado){
-            btn.onclick = ()=> reservarHorario(veh,h,state.selectedDate);
-          }
-          schedule.appendChild(btn);
-        });
-
-        const right = document.createElement("div");
-        right.className = "flex-1 w-full";
-        right.appendChild(schedule);
-
-        card.appendChild(img);
-        card.appendChild(info);
-        card.appendChild(right);
+      data.forEach(v=>{
+        const card = el("div","border rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center bg-white/80");
+        const img  = el("img","w-full md:w-48 h-32 object-cover rounded-xl");
+        img.src = v.foto; img.alt=v.tipo;
+        const info = el("div","flex-1 w-full");
+        info.innerHTML = `<div class="text-lg font-semibold">${v.tipo}</div>
+                          <div class="text-sm text-slate-500">PATENTE: ${v.patente} · CAP.: ${v.capacidad}</div>`;
+        card.appendChild(img); card.appendChild(info);
         cont.appendChild(card);
       });
     }
-
-    async function reservarHorario(vehiculo, horario, fechaISO){
-      if(!state.registro){
-        setActiveTab("registro");
-        $("#msgRegistro").textContent = "⚠️ COMPLETE PRIMERO EL REGISTRO.";
-        $("#msgRegistro").className = "text-red-600 text-sm";
-        return;
-      }
-      const payload = {
-        op:"crear_reserva",
-        ...state.registro,
-        vehiculo, horario,
-        fecha: fechaISO,                // ← la fecha del selector (YYYY-MM-DD)
-        timestamp: new Date().toISOString(),
-        estado: "PENDIENTE"
-      };
-
-      try{
-        if(state.apiUrl){
-          const r = await fetch(state.apiUrl, {
-            method:"POST", headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify(payload)
-          });
-          const j = await r.json().catch(()=>({}));
-          if(!r.ok || j.ok===false){ alert(j.error || "No se pudo guardar la reserva."); return; }
-        }else{
-          // Demo local
-          state.reservas.push(payload);
-        }
-      }catch(e){ alert("Error de conexión con el backend."); return; }
-
-      await cargarReservas();
-      setActiveTab("reservas");
-    }
-
-    // Reservas
-    function renderReservas(){
-      const tb = $("#tbodyReservas"); tb.innerHTML = "";
-      (state.reservas||[]).forEach(r=>{
-        const tr = document.createElement("tr");
-        tr.className = "border-t";
-        tr.innerHTML = `
-          <td class="py-2 pr-4">${r.fecha||"-"}</td>
-          <td class="py-2 pr-4">${r.nombre||"-"}</td>
-          <td class="py-2 pr-4">${r.depto||"-"}</td>
-          <td class="py-2 pr-4">${r.direccion||"-"}</td>
-          <td class="py-2 pr-4">${r.vehiculo||"-"}</td>
-          <td class="py-2 pr-4">${r.horario||"-"}</td>
-          <td class="py-2 pr-4">${r.estado||"PENDIENTE"}</td>`;
-        tb.appendChild(tr);
-      });
-    }
-
-    async function cargarReservas(){
-      try{
-        if(state.apiUrl){
-          const r = await fetch(state.apiUrl + "?op=listar_reservas",{cache:"no-store"});
-          const j = await r.json();
-          state.reservas = j.reservas || [];
-        }else{
-          if(state.reservas.length===0){
-            state.reservas = [
-              { fecha: hoyISO(), nombre:"ANA", depto:"OPERACIONES",
-                direccion:"DIRECCIÓN DE OPERACIONES", vehiculo:"FORD 4X4 (AB-DF12)",
-                horario:"10:00 - 11:00", estado:"APROBADA" }
-            ];
-          }
-        }
-      }catch(e){ console.warn("No se pudo cargar reservas:", e); }
-      buildOcupacion();
-      renderReservas();
-    }
-
-    // Selector de fecha: hoy…31/12 del año actual (lunes a domingo todos válidos)
-    function setupDatePicker(){
-      const input = $("#inputFecha");
-      const now = new Date();
-      const year = now.getFullYear();
-      const max = new Date(year, 11, 31); // 31 de diciembre
-      const minISO = hoyISO();
-      const maxISO = toISODate(max);
-
-      input.min = minISO;
-      input.max = maxISO;
-      input.value = state.selectedDate;
-      $("#lblDia").textContent = formatDiaSemana(state.selectedDate);
-
-      input.addEventListener("change", ()=>{
-        const iso = input.value || hoyISO();
-        state.selectedDate = iso;
-        $("#lblDia").textContent = formatDiaSemana(iso);
-        renderVehiculos();
-      });
-    }
-
-    // Init
-    async function init(){
-      buildHorarios();
-      await loadApiUrl();
-      await cargarVehiculos();
-      await cargarReservas();
-      setupDatePicker();
-
-      // navegación inicial
-      document.querySelectorAll(".tablink").forEach(b=>{
-        b.addEventListener("click", ()=> setActiveTab(b.dataset.tab));
-      });
-      setActiveTab("registro");
-    }
-    init();
-
-    // refrescar reservas manual
-    $("#btnRefrescarReservas")?.addEventListener("click", async ()=>{
-      await cargarReservas();
-      alert("Reservas actualizadas.");
-    });
   </script>
 </body>
 </html>
