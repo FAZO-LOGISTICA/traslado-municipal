@@ -13,25 +13,26 @@
     .btn-sec { @apply bg-slate-200 text-slate-800 hover:bg-slate-300; }
     .card { @apply bg-white/95 backdrop-blur rounded-2xl shadow p-5; }
   </style>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
-  <!-- Fondo -->
-  <div class="fixed inset-0 -z-10 opacity-25"
-       style="background-image:url('./assets/fondo-valpo.jpg');background-size:cover;background-position:center;"></div>
 
-  <!-- Header -->
-  <header class="bg-emerald-900 text-white px-4 py-6 sticky top-0 z-50 shadow">
-    <div class="max-w-7xl mx-auto flex flex-col items-center justify-center gap-3">
-      <img src="./assets/logo-valparaiso.png" alt="Valparaíso" class="w-40 h-auto object-contain"/>
-      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-wide text-center">TRASLADO MUNICIPAL</h1>
-      <p class="text-emerald-100 text-lg">RESERVAS Y GESTIÓN DE VEHÍCULOS</p>
+  <!-- Fondo -->
+  <div class="fixed inset-0 -z-10">
+    <div class="absolute inset-0"
+         style="background-image:url('./assets/fondo-valpo.jpg');background-size:cover;background-position:center;"></div>
+    <div class="absolute inset-0 bg-white/30 backdrop-blur-[1px]"></div>
+  </div>
+
+  <!-- Header institucional compacto -->
+  <header class="bg-emerald-900 text-white px-6 py-4 sticky top-0 z-50 shadow">
+    <div class="max-w-7xl mx-auto flex flex-col items-center text-center gap-2">
+      <img src="./assets/logo-valparaiso.png" alt="Valparaíso" class="h-24 md:h-28 lg:h-32 object-contain"/>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide">TRASLADO MUNICIPAL</h1>
+      <p class="text-emerald-100 text-base md:text-lg">RESERVAS Y GESTIÓN DE VEHÍCULOS</p>
 
       <!-- Nav -->
-      <nav class="flex items-center gap-4 mt-2">
-        <button data-tab="registro" class="tablink btn btn-sec">REGISTRO</button>
+      <nav class="mt-2 flex flex-wrap items-center justify-center gap-3">
+        <button data-tab="registro"  class="tablink btn btn-sec">REGISTRO</button>
         <button data-tab="vehiculos" class="tablink btn btn-sec">VEHÍCULOS & HORARIOS</button>
         <button data-tab="reservas"  class="tablink btn btn-sec">RESERVAS</button>
         <button data-tab="datos"     class="tablink btn btn-sec">DATOS</button>
@@ -39,11 +40,13 @@
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto p-4 space-y-6">
+  <!-- CONTENIDO -->
+  <main class="max-w-6xl mx-auto p-6 space-y-6">
     <!-- ============ REGISTRO ============ -->
     <section id="view-registro" class="space-y-6">
       <div class="card">
         <h2 class="text-2xl font-bold mb-4">NUEVA RESERVA</h2>
+
         <form id="formRegistro" class="grid grid-cols-1 md:grid-cols-2 gap-4" onsubmit="return false;">
           <div>
             <label class="block text-sm mb-1">NOMBRE DEL FUNCIONARIO</label>
@@ -61,6 +64,7 @@
             <label class="block text-sm mb-1">MOTIVO DEL TRASLADO</label>
             <input id="r-motivo" type="text" class="w-full border rounded-lg px-3 py-2 uppercase" placeholder="ESCRIBA EL MOTIVO"/>
           </div>
+
           <div class="md:col-span-2 flex items-center gap-3">
             <button type="button" id="btnSiguiente" class="btn btn-primario">SIGUIENTE</button>
             <button type="button" id="btnCancelar"  class="btn btn-sec">CANCELAR</button>
@@ -73,17 +77,29 @@
     <!-- ============ VEHÍCULOS & HORARIOS ============ -->
     <section id="view-vehiculos" class="hidden space-y-5">
       <div class="card">
-        <div class="flex items-start justify-between mb-4">
-          <h2 class="text-2xl font-bold">VEHÍCULOS & HORARIOS</h2>
-          <div id="resumenSolicitante" class="text-xs text-slate-600"></div>
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-2xl font-bold">VEHÍCULOS & HORARIOS</h2>
+            <div id="resumenSolicitante" class="text-xs text-slate-600 mt-1"></div>
+          </div>
+          <!-- Selector de fecha -->
+          <div class="flex items-center gap-3">
+            <label class="text-sm">FECHA</label>
+            <input id="inputFecha" type="date" class="border rounded-lg px-3 py-2"/>
+            <span id="lblDia" class="text-sm text-slate-600"></span>
+          </div>
         </div>
+
         <div id="listaVehiculos" class="space-y-4"></div>
       </div>
     </section>
 
     <!-- ============ RESERVAS ============ -->
     <section id="view-reservas" class="hidden space-y-4">
-      <h2 class="text-2xl font-bold">RESERVAS</h2>
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold">RESERVAS</h2>
+        <button id="btnRefrescarReservas" class="btn btn-sec">REFRESCAR</button>
+      </div>
       <div class="card overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead class="text-left text-slate-600">
@@ -102,87 +118,218 @@
       </div>
     </section>
 
-    <!-- ============ DATOS ============ -->
+    <!-- ============ DATOS (placeholder) ============ -->
     <section id="view-datos" class="hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="card"><div class="text-xs text-slate-500">TOTAL SOLICITUDES</div><div id="kpiTotal" class="text-2xl font-bold">—</div></div>
-        <div class="card"><div class="text-xs text-slate-500">TASA APROBACIÓN</div><div id="kpiAprob" class="text-2xl font-bold">—</div></div>
-        <div class="card"><div class="text-xs text-slate-500">VEHÍCULOS ACTIVOS</div><div id="kpiVehAct" class="text-2xl font-bold">—</div></div>
-        <div class="card"><div class="text-xs text-slate-500">% OCUPACIÓN</div><div id="kpiOcup" class="text-2xl font-bold">—</div></div>
-      </div>
+      <div class="card">Próximamente KPIs y gráficos.</div>
     </section>
   </main>
 
   <!-- ================== JS ================== -->
   <script>
+    // ------- Utilidades -------
+    const $ = s => document.querySelector(s);
+    const el = (t,c="") => { const n=document.createElement(t); if(c) n.className=c; return n; };
+    const up = v => (v||"").trim().toUpperCase();
+    const hoyISO = () => { const d = new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); };
+    const toISODate = d => { const x = new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,10); };
+    const diaLargo = iso => new Date(iso+"T00:00:00").toLocaleDateString("es-CL",{weekday:"long", day:"2-digit", month:"2-digit"}).toUpperCase();
+
+    // ------- Estado global -------
     const state = {
       registro: null,
       vehiculos: [],
+      reservas: [],           // (demo local). Si conectas backend, se rellenará desde Sheets.
+      ocupacion: new Set(),   // claves: "YYYY-MM-DD|vehiculo|horario"
+      selectedDate: hoyISO(),
       horariosBase: []
     };
-    const $ = (s)=>document.querySelector(s);
-    const el=(t,c="")=>{const n=document.createElement(t); if(c) n.className=c; return n;};
-    const up=(v)=> (v||"").trim().toUpperCase();
+
+    // Generar horarios 08:00..23:59
+    function buildHorarios(){
+      const arr = [];
+      for(let h=8; h<23; h++){
+        const a = String(h).padStart(2,"0")+":00";
+        const b = String(h+1).padStart(2,"0")+":00";
+        arr.push(`${a} - ${b}`);
+      }
+      arr.push("23:00 - 23:59");
+      state.horariosBase = arr;
+    }
 
     // Tabs
     function setActiveTab(tab){
       ["registro","vehiculos","reservas","datos"].forEach(v=>{
         $("#view-"+v).classList.toggle("hidden", v!==tab);
       });
+      document.querySelectorAll(".tablink").forEach(b=>{
+        b.classList.toggle("btn-primario", b.dataset.tab===tab);
+      });
+      window.scrollTo({top:0, behavior:"smooth"});
     }
-
     document.querySelectorAll(".tablink").forEach(b=> b.addEventListener("click",()=>setActiveTab(b.dataset.tab)));
 
-    // ---------- REGISTRO ----------
+    // REGISTRO
     $("#btnSiguiente").addEventListener("click", ()=>{
       const nombre = up($("#r-nombre").value);
       const depto  = up($("#r-depto").value);
       const direc  = up($("#r-direccion").value);
       const motivo = up($("#r-motivo").value);
+      const msg = $("#msgRegistro");
+
       if(!nombre || !depto || !direc){
-        $("#msgRegistro").textContent = "⚠️ CAMPOS OBLIGATORIOS";
+        msg.textContent = "⚠️ NOMBRE, DEPARTAMENTO Y DIRECCIÓN SON OBLIGATORIOS.";
+        msg.className = "text-red-600 text-sm";
         return;
       }
       state.registro = { nombre, depto, direccion: direc, motivo };
-      setActiveTab("vehiculos");
+      msg.textContent = "✓ DATOS GUARDADOS. CONTINÚE CON LA SELECCIÓN DE VEHÍCULO Y HORARIO.";
+      msg.className = "text-emerald-700 text-sm";
+
       pintarResumenSolicitante();
+      setupDatePicker();
       renderVehiculos();
+      setActiveTab("vehiculos");
     });
 
     $("#btnCancelar").addEventListener("click", ()=>{
       $("#formRegistro").reset();
-      state.registro = null;
       $("#msgRegistro").textContent = "";
+      state.registro = null;
     });
 
-    // ---------- VEHÍCULOS ----------
+    // RESUMEN
     function pintarResumenSolicitante(){
       const r = state.registro;
       $("#resumenSolicitante").innerHTML = r
-        ? `Solicitante: ${r.nombre} · Depto: ${r.depto} · Dirección: ${r.direccion}`
-        : `<span class="text-red-600">⚠️ COMPLETE EL REGISTRO</span>`;
+        ? `Solicitante: <b>${r.nombre}</b> · Depto: <b>${r.depto}</b> · Dirección: <b>${r.direccion}</b>`
+        : `<span class="text-red-600">⚠️ Complete primero el registro.</span>`;
+    }
+
+    // CATÁLOGO (usa tus archivos reales)
+    function getCatalogo(){
+      return [
+        { id:"FORD4X4",  tipo:"FORD RANGER 4X4",    patente:"AB-DF12", capacidad:"5 PAX",  foto:"./vehiculos/ford_ranger_4x4.jpg" },
+        { id:"NAVARA",   tipo:"NISSAN NAVARA 4X2",  patente:"CD-EF34", capacidad:"3 PAX",  foto:"./vehiculos/nissan_navara_4x2.jpg" },
+        { id:"KIA",      tipo:"KIA FRONTIER CARGA", patente:"GH-IJ56", capacidad:"1.5T",   foto:"./vehiculos/kia_frontier_carga.jpg" },
+        { id:"VAN",      tipo:"NISSAN NV350 14P",   patente:"KL-MN78", capacidad:"14 PAX", foto:"./vehiculos/nissan_nv350_14p.jpg" },
+      ];
+    }
+
+    function buildOcupacion(){
+      state.ocupacion = new Set();
+      (state.reservas||[]).forEach(r=>{
+        if(r.estado!=="RECHAZADA" && r.fecha && r.vehiculo && r.horario){
+          state.ocupacion.add(`${r.fecha}|${r.vehiculo}|${r.horario}`);
+        }
+      });
     }
 
     function renderVehiculos(){
-      const cont = $("#listaVehiculos"); cont.innerHTML = "";
-      const data = [
-        { id:"FORD4X4",  tipo:"FORD RANGER 4X4",   patente:"AB-DF12", capacidad:"5 PAX",  foto:"./vehiculos/ford_ranger_4x4.jpg" },
-        { id:"NAVARA",   tipo:"NISSAN NAVARA 4X2", patente:"CD-EF34", capacidad:"3 PAX",  foto:"./vehiculos/nissan_navara_4x2.jpg" },
-        { id:"KIA",      tipo:"KIA FRONTIER CARGA",patente:"GH-IJ56", capacidad:"1.5T",   foto:"./vehiculos/kia_frontier_carga.jpg" },
-        { id:"VAN",      tipo:"NISSAN NV350 14P",  patente:"KL-MN78", capacidad:"14 PAX", foto:"./vehiculos/nissan_nv350_14p.jpg" }
-      ];
+      state.vehiculos = getCatalogo();
+      buildOcupacion();
+      $("#lblDia").textContent = diaLargo(state.selectedDate);
 
-      data.forEach(v=>{
-        const card = el("div","border rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center bg-white/80");
-        const img  = el("img","w-full md:w-48 h-32 object-cover rounded-xl");
-        img.src = v.foto; img.alt=v.tipo;
+      const cont = $("#listaVehiculos"); cont.innerHTML = "";
+      state.vehiculos.forEach(v=>{
+        const card = el("div","border rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center bg-white/90");
+        const img  = el("img","w-full md:w-48 h-32 object-cover rounded-xl bg-slate-200");
+        img.src = v.foto; img.alt = v.tipo;
+
         const info = el("div","flex-1 w-full");
-        info.innerHTML = `<div class="text-lg font-semibold">${v.tipo}</div>
-                          <div class="text-sm text-slate-500">PATENTE: ${v.patente} · CAP.: ${v.capacidad}</div>`;
-        card.appendChild(img); card.appendChild(info);
+        info.innerHTML = `
+          <div class="text-lg font-semibold">${v.tipo}</div>
+          <div class="text-sm text-slate-500">PATENTE: ${v.patente} · CAP.: ${v.capacidad}</div>`;
+
+        const schedule = el("div","grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 w-full");
+        state.horariosBase.forEach(h=>{
+          const vehName = `${v.tipo} (${v.patente})`;
+          const clave = `${state.selectedDate}|${vehName}|${h}`;
+          const ocupado = state.ocupacion.has(clave);
+
+          const b = el("button","px-3 py-2 rounded-lg border text-sm " +
+            (ocupado ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                     : "hover:bg-emerald-50 border-emerald-200"));
+
+          b.textContent = h;
+          b.disabled = ocupado;
+          if(!ocupado){
+            b.onclick = ()=> reservarHorario(vehName, h, state.selectedDate);
+          }
+          schedule.appendChild(b);
+        });
+
+        const right = el("div","flex-1 w-full"); right.appendChild(schedule);
+        card.appendChild(img); card.appendChild(info); card.appendChild(right);
         cont.appendChild(card);
       });
     }
+
+    async function reservarHorario(vehiculo, horario, fechaISO){
+      if(!state.registro){
+        setActiveTab("registro");
+        $("#msgRegistro").textContent = "⚠️ COMPLETE PRIMERO EL REGISTRO.";
+        $("#msgRegistro").className = "text-red-600 text-sm";
+        return;
+      }
+      // DEMO local: guarda en memoria (si conectas backend, reemplaza por fetch POST)
+      state.reservas.push({
+        fecha: fechaISO,
+        vehiculo, horario, estado:"PENDIENTE",
+        ...state.registro
+      });
+
+      alert(`Reserva creada:\n${vehiculo}\n${fechaISO} · ${horario}`);
+      renderReservas();
+      setActiveTab("reservas");
+    }
+
+    // RESERVAS
+    function renderReservas(){
+      const tb = $("#tbodyReservas"); if(!tb) return;
+      tb.innerHTML = "";
+      (state.reservas||[]).forEach(r=>{
+        const tr = el("tr","border-t");
+        tr.innerHTML = `
+          <td class="py-2 pr-4">${r.fecha||"-"}</td>
+          <td class="py-2 pr-4">${r.nombre||"-"}</td>
+          <td class="py-2 pr-4">${r.depto||"-"}</td>
+          <td class="py-2 pr-4">${r.direccion||"-"}</td>
+          <td class="py-2 pr-4">${r.vehiculo||"-"}</td>
+          <td class="py-2 pr-4">${r.horario||"-"}</td>
+          <td class="py-2 pr-4">${r.estado||"PENDIENTE"}</td>`;
+        tb.appendChild(tr);
+      });
+    }
+
+    // Date picker: hoy → 31/12 del año actual
+    function setupDatePicker(){
+      const input = $("#inputFecha");
+      if(!input) return;
+      const now = new Date();
+      const max = new Date(now.getFullYear(), 11, 31);
+      input.min = hoyISO();
+      input.max = toISODate(max);
+      input.value = state.selectedDate;
+      $("#lblDia").textContent = diaLargo(state.selectedDate);
+
+      input.addEventListener("change", ()=>{
+        state.selectedDate = input.value || hoyISO();
+        $("#lblDia").textContent = diaLargo(state.selectedDate);
+        renderVehiculos();
+      });
+    }
+
+    // Init
+    function init(){
+      buildHorarios();           // 08:00–23:59
+      setActiveTab("registro");  // arranca en REGISTRO
+      // Botón refrescar reservas (demo)
+      $("#btnRefrescarReservas")?.addEventListener("click", ()=>{
+        renderReservas();
+        alert("Reservas actualizadas.");
+      });
+    }
+    init();
   </script>
 </body>
 </html>
